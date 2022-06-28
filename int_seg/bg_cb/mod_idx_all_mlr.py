@@ -30,9 +30,12 @@ import math
 from scipy import stats
 from scipy.ndimage import gaussian_filter
 from sklearn.linear_model import LinearRegression
+from mlinsights.mlmodel import IntervalRegressor
+
 from statsmodels.tsa.ar_model import AutoReg
 # from scipy.stats import zscore
 from scipy import stats
+import scipy.stats as st
 
 from nilearn.image import load_img
 from nilearn.glm.first_level import compute_regressor
@@ -196,19 +199,45 @@ for i in q_allsub:
     mlr_coeffs_lst.append(mlr_coeffs)
 # print(mlr_coeffs_lst)
 
-## inc and con beta coeff - single
-# inc_reg = np.mean(df_coeffs['inc_coeff'].values)
-# con_reg = np.mean(df_coeffs['con_coeff'].values)
-mlr.fit(df_mod_reg[['inc_reg', 'con_reg']], q_avg)
-mlr_coeffs = mlr.coef_
-# print(mlr_coeffs)
 
+"""
+# get coeff confidence interval
+lin = IntervalRegressor(mlr).fit(df_mod_reg['inc_reg'].values.reshape(-1, 1), q_avg)
+sorted_x = np.array(list(sorted(df_mod_reg['inc_reg'].values)))
+pred = lin.predict(sorted_x.reshape(-1, 1))
+boot_pred = lin.predict_sorted(sorted_x.reshape(-1, 1))
+min_pred = boot_pred[:, 0]
+max_pred = boot_pred[:, boot_pred.shape[-1]-1]
+print(f'inc_interval: {np.mean(min_pred)}, {np.mean(max_pred)}')
+
+import statsmodels.api as sm # super wrong
+lr_model = sm.OLS(q_avg, df_mod_reg[['inc_reg', 'con_reg']]).fit()
+print(lr_model.summary())
+"""
 
 # make diff vec
 np.save('mlr_coeffs_subjs_all_net_cort.npy', mlr_coeffs_lst)
 df_coeffs = pd.DataFrame(mlr_coeffs_lst, columns=['inc_coeff', 'fix_coeff', 'con_coeff'])
 diff_vec = np.squeeze(list(map(lambda x:[x[2] - x[0]], mlr_coeffs_lst)))
 
+## inc and con beta coeff - single
+inc_reg = np.mean(df_coeffs['inc_coeff'].values)
+con_reg = np.mean(df_coeffs['con_coeff'].values)
+
+"""
+mlr.fit(df_mod_reg[['inc_reg', 'con_reg']], q_avg) # kinda wrong
+mlr_coeffs = mlr.coef_
+print(mlr_coeffs)
+"""
+
+# get confidence intervals
+# inc_interval = st.t.interval(alpha=0.95, df=len(df_coeffs['inc_coeff'].values)-1, \
+#                              loc=inc_reg, scale=st.sem(df_coeffs['inc_coeff'].values))
+inc_interval = st.norm.interval(alpha=0.95, loc=inc_reg, scale=st.sem(df_coeffs['inc_coeff'].values))
+
+# con_interval = st.t.interval(alpha=0.95, df=len(df_coeffs['con_coeff'].values)-1, \
+#                              loc=con_reg, scale=st.sem(df_coeffs['con_coeff'].values))
+con_interval = st.norm.interval(alpha=0.95, loc=con_reg, scale=st.sem(df_coeffs['con_coeff'].values))
 
 # load rest modularity
 q_allsub_rest = np.load('subjs_all_net_cort_q_rest.npy', allow_pickle=True)
@@ -223,17 +252,18 @@ ttest_1samp_within = stats.ttest_1samp(diff_vec, rest_mean)
 print(f'\nResting state mean: {rest_mean}')
 print(f'One samp t-test: {ttest_1samp_within} \n')
 print("Model coefficients:")
-print(f'inc_coeff  {round(mlr_coeffs[0], 4)}\ncon_coeff  {round(mlr_coeffs[1], 4)}')
+print(f'inc_coeff  {round(inc_reg, 4)}    {inc_interval}')
+print(f'con_coeff  {round(con_reg, 4)}    {con_interval}\n')
 
 # save model output to csv
-m_output = open(f'subjs_all_net_cort/mlr/mlr_output.csv', 'w')
-m_output = open(f'subjs_all_net_cort/mlr/mlr_output.csv', 'a')
+m_output = open(f'subjs_all_net_cort/mlr/mod_mlr_output.csv', 'w')
+m_output = open(f'subjs_all_net_cort/mlr/mod_mlr_output.csv', 'a')
 writer = csv.writer(m_output)
 
 writer.writerow(['Resting state mean ', rest_mean])
 writer.writerow(['One samp t-test ', ttest_1samp_within])
-writer.writerow(['inc_coeff ', round(mlr_coeffs[0], 4)])
-writer.writerow(['con_coeff ', round(mlr_coeffs[1], 4)])
+writer.writerow(['inc_coeff ', round(inc_reg, 4), inc_interval])
+writer.writerow(['con_coeff ', round(con_reg, 4), con_interval])
 
 
 ## SWARM PLOT - of beta coeffs
