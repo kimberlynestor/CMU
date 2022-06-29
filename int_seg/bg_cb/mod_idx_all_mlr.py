@@ -46,7 +46,7 @@ import seaborn as sns
 import ptitprince as pt
 
 # np.set_printoptions(threshold=sys.maxsize)
-# pd.set_option('display.max_rows', None)
+pd.set_option('display.max_rows', None)
 
 
 # data path and subjects
@@ -273,17 +273,27 @@ writer.writerow(['con_coeff ', round(con_reg, 4), con_interval])
 # plt.show()
 
 # two groups
-p_dict = {'Incongruent':'tab:orange', 'Congruent':'tab:blue'}
-df_coeffs_melt = pd.DataFrame(list(itertools.chain(list(map(lambda i: [i[0], 'Incongruent'], \
-                    mlr_coeffs_lst)), list(map(lambda i: [i[2], 'Congruent'], mlr_coeffs_lst)))), \
+p_dict = {'Incongruent':'tab:orange', 'Congruent':'tab:blue', 'Difference':'#8A2D1C'}
+df_coeffs_melt = pd.DataFrame(list(itertools.chain( \
+                    list(map(lambda i: [i[0], 'Incongruent'], mlr_coeffs_lst)), \
+                    list(map(lambda i: [i[2], 'Congruent'], mlr_coeffs_lst)))  ), \
                               columns=['coeff', 'task'])
+df_coeffs_melt_diff = pd.concat([pd.DataFrame(list(map(lambda i: [i, 'Difference'], \
+                            diff_vec)), columns=['coeff', 'task']), df_coeffs_melt])
 
-sns.set(font='serif')
-sns.swarmplot(x='task', y='coeff', data=df_coeffs_melt, zorder=1, palette=p_dict, alpha=0.8)
-sns.pointplot(x='task', y='coeff', data=df_coeffs_melt, ci=95, join=False, color='black', seed=0)
 
-plt.xlabel('Task block', size=13, fontname="serif")
-plt.ylabel('Beta coefficients (Q)', size=13, fontname="serif")
+plt.figure(figsize=(15,10), dpi=300) # 8, 12
+sns.set(font='serif', font_scale=1.8)
+sns.swarmplot(x='task', y='coeff', data=df_coeffs_melt_diff, \
+              order=['Incongruent', 'Congruent', 'Difference'], zorder=1, \
+              palette=p_dict, alpha=0.8, size=6)
+sns.pointplot(x='task', y='coeff', data=df_coeffs_melt_diff, \
+              order=['Incongruent', 'Congruent', 'Difference'], ci=95, \
+              join=False, color='black', seed=0)
+
+plt.xlabel('Task block', size=19, fontname="serif")
+plt.ylabel('Beta coefficients (Q)', size=20, fontname="serif")
+# plt.subplots_adjust(wspace=.2)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mlr/allsub_cortnet_mod_swarm.png', dpi=300)
+plt.savefig('subjs_all_net_cort/mlr/allsub_cortnet_mod_swarm_diff.png', dpi=300)
 plt.show()
