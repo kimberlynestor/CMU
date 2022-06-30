@@ -145,6 +145,19 @@ fix_cond = np.array( [df_task_events['onset'].to_numpy() - rest] + \
 inc_block = list(zip(inc_cond[0], inc_cond[0]+inc_cond[1][0]))
 con_block = list(zip(con_cond[0], con_cond[0]+con_cond[1][0]))
 
+# indices for inc and con
+inc_block_frames = np.array(inc_block)/2
+inc_frames_idx = list(map(lambda i: list(range(int(i[0]), int(i[1]))), inc_block_frames))
+
+con_block_frames = np.array(con_block)/2
+con_frames_idx = list(map(lambda i: list(range(int(i[0]), int(i[1]))), con_block_frames))
+
+# for all subjects get only inc and con mod
+q_allsub_inc = list(map(lambda subj: list(map(lambda block: subj[block] ,inc_frames_idx)) ,q_allsub))
+q_allsub_con = list(map(lambda subj: list(map(lambda block: subj[block] ,con_frames_idx)) ,q_allsub))
+
+# to do - smooth z score, make melt df, pointplot
+sys.exit()
 
 ##############
 # legend patches
