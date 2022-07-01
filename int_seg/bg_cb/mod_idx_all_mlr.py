@@ -45,8 +45,11 @@ import matplotlib.patches as mpatches
 import seaborn as sns
 import ptitprince as pt
 
-# np.set_printoptions(threshold=sys.maxsize)
+np.set_printoptions(threshold=sys.maxsize)
 # pd.set_option('display.max_rows', None)
+
+
+p_dict = {'Incongruent':'tab:orange', 'Congruent':'tab:blue', 'Difference':'#8A2D1C'}
 
 
 # data path and subjects
@@ -153,11 +156,43 @@ con_block_frames = np.array(con_block)/2
 con_frames_idx = list(map(lambda i: list(range(int(i[0]), int(i[1]))), con_block_frames))
 
 # for all subjects get only inc and con mod
-q_allsub_inc = list(map(lambda subj: list(map(lambda block: subj[block] ,inc_frames_idx)) ,q_allsub))
-q_allsub_con = list(map(lambda subj: list(map(lambda block: subj[block] ,con_frames_idx)) ,q_allsub))
+q_allsub_inc = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
+                                    subj[block] ,inc_frames_idx))) ,q_allsub)))
+q_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
+                                    subj[block] ,con_frames_idx))) ,q_allsub)))
 
-# to do - smooth z score, make melt df, pointplot
-sys.exit()
+# smooth inc and con block data, make dataframe for plotting - to do z score
+q_inc_avg = np.mean(q_allsub_inc, axis=0)
+q_inc_avg_smooth = gaussian_filter(q_inc_avg, sigma=1)
+q_inc_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Incongruent'], \
+                        np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
+                            for i in np.array(list(enumerate(q_inc_avg_smooth, 1))  , \
+                                dtype=object )]).reshape((120, 2))))
+q_inc_sep_blocks = list(itertools.chain([i for i in q_inc_sep_blocks if i[1]==1 ], \
+                    [[i[0], i[1]+1, i[2]] for i in q_inc_sep_blocks if i[1]==2], \
+                     [[i[0], i[1]+2, i[2]] for i in q_inc_sep_blocks if i[1]==3] , \
+                     [[i[0], i[1]+3, i[2]] for i in q_inc_sep_blocks if i[1]==4] ))
+
+q_con_avg = np.mean(q_allsub_con, axis=0)
+q_con_avg_smooth = gaussian_filter(q_con_avg, sigma=1)
+q_con_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Congruent'], \
+                        np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
+                            for i in np.array(list(enumerate(q_con_avg_smooth, 1))  , \
+                                dtype=object )]).reshape((120, 2))))
+q_con_sep_blocks = list(map(lambda x: [x[0], x[1]+x[1], x[2]], q_con_sep_blocks))
+
+
+
+df_q_sep_blocks = pd.DataFrame(list(itertools.chain(q_inc_sep_blocks, q_con_sep_blocks)), \
+                               columns=['mod_idx', 'block', 'task'])
+
+
+###### POINTPLOT OF CI
+sns.pointplot(  x='block', y='mod_idx', hue='task', data=df_q_sep_blocks , \
+                join=False, palette=p_dict )
+plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci.png', dpi=300)
+plt.show()
+
 
 ##############
 # legend patches
@@ -303,7 +338,6 @@ writer.writerow(['con_coeff ', con_reg, con_interval])
 # plt.show()
 
 # two groups
-p_dict = {'Incongruent':'tab:orange', 'Congruent':'tab:blue', 'Difference':'#8A2D1C'}
 df_coeffs_melt = pd.DataFrame(list(itertools.chain( \
                     list(map(lambda i: [i[0], 'Incongruent'], mlr_coeffs_lst)), \
                     list(map(lambda i: [i[1], 'Congruent'], mlr_coeffs_lst)))  ), \
