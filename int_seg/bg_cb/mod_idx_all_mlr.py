@@ -164,14 +164,11 @@ q_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
 # smooth inc and con block data, make dataframe for plotting - to do z score
 q_inc_avg = np.mean(q_allsub_inc, axis=0)
 q_inc_avg_smooth = gaussian_filter(q_inc_avg, sigma=1)
+q_inc_sep_blocks = np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
+                    for i in np.array(list(enumerate(q_inc_avg_smooth, 1)) , dtype=object)])
 q_inc_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Incongruent'], \
-                        np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
-                            for i in np.array(list(enumerate(q_inc_avg_smooth, 1))  , \
-                                dtype=object )]).reshape((120, 2))))
-q_inc_sep_blocks = list(itertools.chain([i for i in q_inc_sep_blocks if i[1]==1 ], \
-                    [[i[0], i[1]+1, i[2]] for i in q_inc_sep_blocks if i[1]==2], \
-                     [[i[0], i[1]+2, i[2]] for i in q_inc_sep_blocks if i[1]==3] , \
-                     [[i[0], i[1]+3, i[2]] for i in q_inc_sep_blocks if i[1]==4] ))
+                    np.array([np.array(list(map(lambda x:[x[0], x[1]+j], i))) \
+                    for i,j in zip(q_inc_sep_blocks, range(4))]).reshape((120, 2)) ))
 
 q_con_avg = np.mean(q_allsub_con, axis=0)
 q_con_avg_smooth = gaussian_filter(q_con_avg, sigma=1)
@@ -180,7 +177,6 @@ q_con_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Congruent'], \
                             for i in np.array(list(enumerate(q_con_avg_smooth, 1))  , \
                                 dtype=object )]).reshape((120, 2))))
 q_con_sep_blocks = list(map(lambda x: [x[0], x[1]+x[1], x[2]], q_con_sep_blocks))
-
 
 
 df_q_sep_blocks = pd.DataFrame(list(itertools.chain(q_inc_sep_blocks, q_con_sep_blocks)), \
