@@ -111,8 +111,11 @@ for task in ['stroop', 'msit', 'rest']:
 
 # load modularity time series, remove init 5, smooth, z score
 q_allsub = np.load(f'{out_name}{task}.npy')
+q_allsub_z = np.array(list(map(lambda i: stats.zscore(i[5:]), q_allsub)))
+
 q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), q_allsub)))
 q_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), q_allsub_smooth)))
+
 
 # avg q across subjs
 q_avg = np.average(q_allsub, axis=0)
@@ -150,31 +153,29 @@ con_block = list(zip(con_cond[0], con_cond[0]+con_cond[1][0]))
 
 # indices for inc and con
 inc_block_frames = np.array(inc_block)/2
-inc_frames_idx = list(map(lambda i: list(range(int(i[0]), int(i[1]))), inc_block_frames))
+inc_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), inc_block_frames))) -5
 
 con_block_frames = np.array(con_block)/2
-con_frames_idx = list(map(lambda i: list(range(int(i[0]), int(i[1]))), con_block_frames))
+con_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), con_block_frames))) -5
 
 # for all subjects get only inc and con mod
 q_allsub_inc = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
-                                    subj[block] ,inc_frames_idx))) ,q_allsub)))
+                                    subj[block] ,inc_frames_idx))) ,q_allsub_z))) # q_allsub, q_allsub_z, q_allsub_smooth_z
 q_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
-                                    subj[block] ,con_frames_idx))) ,q_allsub)))
+                                    subj[block] ,con_frames_idx))) ,q_allsub_z)))
 
 # smooth inc and con block data, make dataframe for plotting - to do z score
 q_inc_avg = np.mean(q_allsub_inc, axis=0)
-q_inc_avg_smooth = gaussian_filter(q_inc_avg, sigma=1)
 q_inc_sep_blocks = np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
-                    for i in np.array(list(enumerate(q_inc_avg_smooth, 1)) , dtype=object)])
+                    for i in np.array(list(enumerate(q_inc_avg, 1)) , dtype=object)])
 q_inc_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Incongruent'], \
                     np.array([np.array(list(map(lambda x:[x[0], x[1]+j], i))) \
                     for i,j in zip(q_inc_sep_blocks, range(4))]).reshape((120, 2)) ))
 
 q_con_avg = np.mean(q_allsub_con, axis=0)
-q_con_avg_smooth = gaussian_filter(q_con_avg, sigma=1)
 q_con_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Congruent'], \
                         np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
-                            for i in np.array(list(enumerate(q_con_avg_smooth, 1))  , \
+                            for i in np.array(list(enumerate(q_con_avg, 1))  , \
                                 dtype=object )]).reshape((120, 2))))
 q_con_sep_blocks = list(map(lambda x: [x[0], x[1]+x[1], x[2]], q_con_sep_blocks))
 
