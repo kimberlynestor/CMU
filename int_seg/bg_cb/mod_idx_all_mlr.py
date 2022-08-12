@@ -21,7 +21,9 @@ from csv import DictWriter
 import csv
 
 import bct
+
 import jr_funcs as jr
+import bg_cb_funcs as bcf
 
 import numpy as np
 import pandas as pd
@@ -49,12 +51,16 @@ import ptitprince as pt
 from matplotlib.lines import Line2D
 
 # np.set_printoptions(threshold=sys.maxsize)
-# pd.set_option('display.max_rows', None)
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_colwidth', None)
+pd.set_option('display.max_columns', None)
 
 
-p_dict = {'Incongruent':'tab:orange', 'Congruent':'tab:blue', 'Fixation':'tab:green', \
-          'Difference':'#8A2D1C', 'Incongruent Fixation':'tab:orange', 'Congruent Fixation':'tab:blue'}
+# p_dict = {'Incongruent':'tab:orange', 'Congruent':'tab:blue', 'Fixation':'tab:green', \
+#           'Difference':'#8A2D1C', 'Incongruent Fixation':'tab:orange', 'Congruent Fixation':'tab:blue'}
 
+p_dict = {'Incongruent':'#c6b5ff', 'Congruent':'#a5cae7', 'Fixation':'#ffbcd9', \
+          'Difference':'#8A2D1C', 'Incongruent Fixation':'#c6b5ff', 'Congruent Fixation':'#a5cae7'} # 'Fixation':'#e1c1de'
 
 # data path and subjects
 main_dir = '/home/kimberlynestor/gitrepo/int_seg/data/'
@@ -68,53 +74,10 @@ frs = 280
 subj_lst = np.loadtxt(opj(main_dir, dep_path, 'subjects_intersect_motion_035.txt'))
 df_task_events = pd.read_csv(opj(main_dir, dep_path, 'task-stroop_events.tsv'), sep="\t")
 
-# shen parcels region assignment
-net_assign = pd.read_csv(opj(main_dir, dep_path, 'shen_268_parcellation_networklabels.csv')).values
-cort_assign = np.array(list(filter(lambda i: i[1] != 4, net_assign)))
-c_idx = [i[0] for i in cort_assign]
-
-task = 'stroop'
-out_name = 'subjs_all_net_cort_q_'
-# out_name = 'subjs_all_net_all_q_'
-"""
-# get efc mat for all subjects, cortical networks only
-
-for task in ['stroop', 'msit', 'rest']:
-    #     print(task)
-    # mod_file = open(f'subjs_mod_mat_{task}.csv', 'w')
-    q_file = open(f'{out_name}{task}.csv', 'w')
-
-    # loop_start = process_time()
-    q_subj_lst = []
-    for subj in subj_lst:
-        efc_mat = jr.get_efc_trans_sing(opj(main_dir, d_path), task, subj) # all networks
-        efc_mat_cort = np.array(list(map(lambda frame: \
-                        np.array(list(map(lambda col: col[c_idx], \
-                            frame[c_idx]))), efc_mat))) # cortex only
-
-        mod_all_frs = np.array(list(map(lambda mat: bct.community_louvain(mat, \
-                            gamma=1.5, B='negative_sym'), efc_mat_cort)), dtype=object)
-
-        ci_all_frs = np.array(list(map(lambda x: x[0], mod_all_frs)))
-        q_all_frs = np.array(list(map(lambda x: x[1], mod_all_frs)))
-        q_subj_lst.append(q_all_frs)
-
-        # save to csv
-        with open(f'{out_name}{task}.csv', 'a') as f_obj:
-            w_obj = writer(f_obj)
-            w_obj.writerow(q_all_frs)
-            f_obj.close()
-        # break
-    # save to npy
-    np.save(f'{out_name}{task}.npy', q_subj_lst)
-# loop_end = process_time()
-# loop_time = loop_end - loop_start
-# print(f'loop time for execution: {loop_time}')
-"""
-
 
 # load modularity time series, remove init 5, smooth, z score
-q_allsub = np.load(f'{out_name}{task}.npy')
+# bcf.save_mod_idx(subj_lst, 'all')
+q_allsub = np.load(f'subjs_all_net_cort_q_stroop.npy')
 q_allsub_z = np.array(list(map(lambda i: stats.zscore(i[5:]), q_allsub)))
 
 q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), q_allsub)))
@@ -132,39 +95,6 @@ q_avg_smooth_z = stats.zscore(q_avg_smooth)
 # init_mask = np.ma.array(np.ones(5), mask=np.ones(5))
 
 
-## TASK BLOCK ONSET
-df_task_events = pd.read_csv(opj(main_dir, dep_path, 'task-stroop_events.tsv'), sep="\t")
-
-# timing for inter task rest
-rest = df_task_events.iloc[0,0]
-
-# make list of onset times for incongruent and congruent tasks
-inc_cond = df_task_events[df_task_events.loc[:,"trial_type"]=="Incongruent"].to_numpy().T
-inc_cond[2,:] = np.ones(len(inc_cond[0]))
-
-con_cond = df_task_events[df_task_events.loc[:,"trial_type"]=="Congruent"].to_numpy().T
-con_cond[2,:] = np.ones(len(con_cond[0]))
-
-# onset times for inter trial 10sec rest
-fix_cond = np.array( [df_task_events['onset'].to_numpy() - rest] + \
-           [np.full(len(df_task_events['onset']), inc_cond[0][0])] + \
-           [np.ones(len(df_task_events['onset']))] )
-
-# task timing blocks - modularity
-inc_block = list(zip(inc_cond[0], inc_cond[0]+inc_cond[1][0]))
-con_block = list(zip(con_cond[0], con_cond[0]+con_cond[1][0]))
-fix_block = list(zip(fix_cond[0], fix_cond[0]+fix_cond[1][0]))
-
-# indices for inc and con, fix
-inc_block_frames = np.array(inc_block)/2
-inc_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), inc_block_frames))) -5
-
-con_block_frames = np.array(con_block)/2
-con_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), con_block_frames))) -5
-
-fix_block_frames = np.array(fix_block)/2
-fix_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), fix_block_frames)))[1:] -5
-
 
 # for all subjects get only inc and con mod
 q_allsub_inc = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
@@ -175,7 +105,7 @@ q_allsub_fix = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
                                     subj[block] , fix_frames_idx))) ,q_allsub_z)))
 
 
-# smooth inc and con block data, make dataframe for plotting - to do z score
+# make dataframe for plotting
 q_inc_avg = np.mean(q_allsub_inc, axis=0)
 q_inc_sep_blocks = np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
                     for i in np.array(list(enumerate(q_inc_avg, 1)) , dtype=object)])
@@ -210,11 +140,11 @@ df_fix = pd.DataFrame(q_fix_off_task_sep, columns=['mod_idx', 'block', 'task'])
 
 ###### POINTPLOT OF CI - all in one
 inc_patch = Line2D(range(1), range(1), color='white', marker='o', markersize=11, \
-                   markerfacecolor='tab:orange')
+                   markerfacecolor=p_dict['Incongruent'])
 con_patch = Line2D(range(1), range(1), color='white', marker='o', markersize=11, \
-                   markerfacecolor='tab:blue')
+                   markerfacecolor=p_dict['Congruent'])
 fix_patch = Line2D(range(1), range(1), color='white', marker='o', markersize=11, \
-                   markerfacecolor='tab:green')
+                   markerfacecolor=p_dict['Fixation'])
 
 # fig, ax = plt.subplots()
 sns.pointplot(x='block', y='mod_idx', hue='task', data=df_q_sep_blocks, \
@@ -227,7 +157,7 @@ plt.xlabel("Task block", size=14, fontname="serif")
 plt.ylabel("Modularity (Q)", size=14, fontname="serif")
 plt.legend((inc_patch, con_patch, fix_patch), ('Incongruent', 'Congruent', 'Fixation'), numpoints=1)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_wr.png', dpi=300)
+plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_wr_cc.png', dpi=300)
 plt.show()
 
 
@@ -249,7 +179,7 @@ ax1.legend((inc_patch, con_patch), ('Incongruent', 'Congruent'), numpoints=1, lo
 ax2.legend('', frameon=False)
 fig.legend('', frameon=False)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_subplots.png', dpi=300)
+plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_subplots_cc.png', dpi=300)
 plt.show()
 
 
@@ -294,6 +224,8 @@ q_fix_off_task_sep_allsub = list(map(lambda sub: list(map(lambda i: [i[0], int(i
         'Incongruent Fixation'] if i[1] in range(1, 8, 2) else [i[0], int(i[1]), \
                 'Congruent Fixation'], sub)), q_fix_off_task_sep_blocks_allsub))
 """
+
+# mean task block
 q_allsub_fix_tmean = np.array(list(map(lambda sub: np.mean(sub, axis=1), q_allsub_fix)))
 
 q_allsub_fix_inc_tmean = list(map(lambda sub: sub[list(range(0,6,2))], q_allsub_fix_tmean))
@@ -315,13 +247,61 @@ df_mlm_off_task = pd.concat([df_mlm_con_melt_off, df_mlm_inc_melt_off], ignore_i
 # print(df_mlm_off_task)
 df_mlm_off_task.to_csv('off_task_block_mu_mod_idx.csv', index=False)
 
-sys.exit()
+# get data for full timescale of task block
+q_allsub_fix_inc_ts = list(map(lambda sub: np.array(list(enumerate(\
+                        sub[list(range(0,6,2))], 1)), dtype=object).ravel(), q_allsub_fix))
+df_mlm_inc_off_task_ts = pd.DataFrame(q_allsub_fix_inc_ts)
+
+q_allsub_fix_con_ts = list(map(lambda sub: np.array(list(enumerate(\
+                        sub[list(range(1,6,2))], 1)), dtype=object).ravel(), q_allsub_fix))
+df_mlm_con_off_task_ts = pd.DataFrame(q_allsub_fix_con_ts)
+
+# df for each task, all frames - incongruent
+df_off_inc_task1 = pd.DataFrame(df_mlm_inc_off_task_ts[1].values.tolist(), columns=range(1,6))
+df_off_inc_task1.insert(0, 'block', df_mlm_inc_off_task_ts[0].values.tolist())
+df_off_inc_task1.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+
+df_off_inc_task2 = pd.DataFrame(df_mlm_inc_off_task_ts[3].values.tolist(), columns=range(1,6))
+df_off_inc_task2.insert(0, 'block', df_mlm_inc_off_task_ts[2].values.tolist())
+df_off_inc_task2.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+
+df_off_inc_task3 = pd.DataFrame(df_mlm_inc_off_task_ts[5].values.tolist(), columns=range(1,6))
+df_off_inc_task3.insert(0, 'block', df_mlm_inc_off_task_ts[4].values.tolist())
+df_off_inc_task3.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+
+df_mlm_off_ts_inc = pd.concat([df_off_inc_task1, df_off_inc_task2, df_off_inc_task3])
+df_mlm_off_ts_inc['task'] = 'Incongruent'
+df_mlm_off_ts_inc_melt = pd.melt(df_mlm_off_ts_inc, id_vars=['subj_ID', 'task', 'block'], \
+                                 var_name='frame', value_name='mod_idx')
+
+# df for each task, all frames - congruent
+df_off_con_task1 = pd.DataFrame(df_mlm_con_off_task_ts[1].values.tolist(), columns=range(1,6))
+df_off_con_task1.insert(0, 'block', df_mlm_con_off_task_ts[0].values.tolist())
+df_off_con_task1.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+
+df_off_con_task2 = pd.DataFrame(df_mlm_con_off_task_ts[3].values.tolist(), columns=range(1,6))
+df_off_con_task2.insert(0, 'block', df_mlm_con_off_task_ts[2].values.tolist())
+df_off_con_task2.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+
+df_off_con_task3 = pd.DataFrame(df_mlm_con_off_task_ts[5].values.tolist(), columns=range(1,6))
+df_off_con_task3.insert(0, 'block', df_mlm_con_off_task_ts[4].values.tolist())
+df_off_con_task3.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+
+df_mlm_off_ts_con = pd.concat([df_off_con_task1, df_off_con_task2, df_off_con_task3])
+df_mlm_off_ts_con['task'] = 'Congruent'
+df_mlm_off_ts_con_melt = pd.melt(df_mlm_off_ts_con, id_vars=['subj_ID', 'task', 'block'], \
+                                 var_name='frame', value_name='mod_idx')
+
+# df off task melt full timescale
+df_mlm_off_ts = pd.concat([df_mlm_off_ts_con_melt, df_mlm_off_ts_inc_melt])
+df_mlm_off_ts.to_csv('off_task_block_mod_idx_ts.csv', index=False)
+# print(df_mlm_off_ts)
 
 
 ###### MODULARITY LINE GRAPH
 # legend patches
-inc_patch = mpatches.Patch(color='tab:orange', label='Incongruent', alpha=0.35)
-con_patch = mpatches.Patch(color='tab:blue', label='Congruent', alpha=0.35)
+inc_patch = mpatches.Patch(color=p_dict['Incongruent'], label='Incongruent', alpha=0.7) # 0.35
+con_patch = mpatches.Patch(color=p_dict['Congruent'], label='Congruent', alpha=0.7) # 0.35
 
 # make init mask
 q_avg_smooth_mask = np.ma.array(np.insert(q_avg_smooth, 0, np.ones(5)), \
@@ -330,7 +310,7 @@ q_avg_smooth_z_mask = np.ma.array(np.insert(q_avg_smooth_z, 0, np.ones(5)), \
                                   mask=np.pad(np.ones(5), (0,frs-5)))
 
 ## plot mod max, all timepoint, all subjs - smooth, with task blocks
-plt.plot(np.arange(0, 280*rt, 2), q_avg_smooth_z_mask, linewidth=1)
+plt.plot(np.arange(0, 280*rt, 2), q_avg_smooth_z_mask, linewidth=1, color='#717577') # dimgrey, gray, #757575
 plt.xticks(np.arange(0, 280*rt, 60))
 plt.xlabel("Time (s)", size=15, fontname="serif")
 plt.ylabel("Modularity (Q)", size=15, fontname="serif")
@@ -338,17 +318,18 @@ plt.ylabel("Modularity (Q)", size=15, fontname="serif")
 # colour plot background with breakpoints
 for i in range(len(inc_block)):
     # incongruent
-    plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor='tab:orange', alpha=0.22)
+    plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent'], alpha=0.35) # tab:orange, 0.22
     # congruent
-    plt.axvspan(con_block[i][0], con_block[i][1], facecolor='tab:blue', alpha=0.2)
+    plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35) # tab:blue, 0.2, #91C1E2
 # plt.ylim(0.43, 0.45) # mask mod, no z
 plt.ylim(-3.5, 2.25)
 plt.legend(handles=[inc_patch, con_patch], loc=4)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig1_blocks_mask_init.png', dpi=300)
+plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig1_blocks_mask_init_cc.png', dpi=300)
 plt.show()
 ##############
 
+sys.exit()
 
 ## HRF PREDICT
 # timepoints of image capture
