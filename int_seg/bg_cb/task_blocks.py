@@ -3,8 +3,17 @@
 
 
 """
+
+from os.path import join as opj
+
 import numpy as np
 import pandas as pd
+
+from nilearn.glm.first_level import compute_regressor
+
+
+rt = 2
+frs = 280
 
 # data path and subjects
 main_dir = '/home/kimberlynestor/gitrepo/int_seg/data/'
@@ -37,11 +46,30 @@ fix_block = list(zip(fix_cond[0], fix_cond[0]+fix_cond[1][0]))
 
 # indices for inc and con, fix
 inc_block_frames = np.array(inc_block)/2
-inc_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), inc_block_frames))) -5
+inc_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), \
+                                                        inc_block_frames))) -5
 
 con_block_frames = np.array(con_block)/2
-con_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), con_block_frames))) -5
+con_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), \
+                                                        con_block_frames))) -5
 
 fix_block_frames = np.array(fix_block)/2
-fix_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), fix_block_frames)))[1:] -5
+fix_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), \
+                                                        fix_block_frames)))[1:] -5
+
+#### HRF PREDICT
+# timepoints of image capture
+frame_times = np.arange(frs)*rt
+
+# create hrf prediction model of tasks
+inc_regressor = np.squeeze(compute_regressor(inc_cond, hrf_model = "glover", \
+                                              frame_times=frame_times)[0] )
+con_regressor = np.squeeze(compute_regressor(con_cond, hrf_model = "glover", \
+                                              frame_times=frame_times)[0] )
+fix_regressor = np.squeeze(compute_regressor(fix_cond, hrf_model = "glover", \
+                                              frame_times=frame_times)[0] )
+
+# make regressor df
+df_reg = pd.DataFrame(np.column_stack([inc_regressor, fix_regressor, con_regressor]),  \
+                          columns=['inc_reg', 'fix_reg', 'con_reg'])
 
