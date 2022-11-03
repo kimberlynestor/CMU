@@ -37,13 +37,6 @@ import statsmodels.formula.api as smf
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-np.set_printoptions(threshold=sys.maxsize)
-np.set_printoptions(linewidth=np.inf)
-# pd.set_option('display.max_rows', None)
-# pd.set_option('display.max_colwidth', None)
-# pd.set_option('display.max_columns', None)
-
-
 
 # load edge time series by region
 # save_connec(subj_lst, task='all', region='cort')
@@ -82,12 +75,14 @@ print(np.array(con_allsub_cort)[0:2])
 # average across nodes, then subjects, smooth, z
 # cortical nodes
 con_allsub_cort = np.load(f'subjs_all_net_cort_stroop.npy')
-con_allsub_cort = np.absolute( con_allsub_cort )
+# con_allsub_cort = np.absolute( con_allsub_cort )
 avg_con_cort = np.array(list(map(lambda sub: np.array(list(map(lambda t: \
-                                np.average(t) , sub))), con_allsub_cort)))
+                            np.average(np.absolute(t)) , sub))), con_allsub_cort)))
 avg_all_con_cort = np.average(avg_con_cort, axis=0)
 con_cort_smooth = gaussian_filter(avg_all_con_cort, sigma=1)
 con_cort_smooth_z = stats.zscore(con_cort_smooth)
+np.save(f'con_cort_smooth_z_stroop.npy', con_cort_smooth_z)
+
 
 # cb nodes
 # con_allsub_cb = np.load(f'subjs_all_net_cb_stroop.npy')
@@ -101,6 +96,7 @@ avg_all_con_cb = np.ma.average(np.ma.masked_array(avg_con_cb, \
                                 np.isnan(avg_con_cb)), axis=0)
 con_cb_smooth = gaussian_filter(avg_all_con_cb, sigma=1)
 con_cb_smooth_z = stats.zscore(con_cb_smooth)
+np.save(f'con_cb_smooth_z_cort_stroop.npy', con_cb_smooth_z)
 
 # bg nodes
 # con_allsub_bg = np.load(f'subjs_all_net_bg_stroop.npy')
@@ -114,6 +110,7 @@ avg_all_con_bg = np.ma.average(np.ma.masked_array(avg_con_bg, \
                                 np.isnan(avg_con_bg)), axis=0)
 con_bg_smooth = gaussian_filter(avg_all_con_bg, sigma=1)
 con_bg_smooth_z = stats.zscore(con_bg_smooth)
+np.save(f'con_bg_smooth_z_cort_stroop.npy', con_bg_smooth_z)
 
 # thal nodes
 # con_allsub_thal = np.load(f'subjs_all_net_thal_stroop.npy')
@@ -172,51 +169,6 @@ plt.show()
 
 
 
-# ALL IN ONE PLOT
-## plot connectivity from cb, bg -- with modularity of cort
-q_avg_smooth_z_mask_cort = np.ma.array(np.insert( \
-                            np.load('q_avg_smooth_z_cort_stroop.npy'), 0, \
-                                np.ones(5)), mask=np.pad(np.ones(5), (0,frs-5)))
-
-plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask_cort, lw=1, c=p_dict['cort_line'], label='mod_cort_line')
-plt.plot(np.arange(0, frs*rt, 2), con_cb_smooth_z, lw=1, c=p_dict['cb_line'], label='connec_cb_line', ls='--')
-plt.plot(np.arange(0, frs*rt, 2), con_bg_smooth_z, lw=1, c=p_dict['bg_line'], label='connec_bg_line', ls='--')
-
-plt.xticks(np.arange(0, frs*rt, 60))
-plt.xlabel('Time (s)', size=15, fontname='serif')
-plt.ylabel('Z-scored values', size=15, fontname='serif')
-
-# colour plot background with breakpoints
-for i in range(len(inc_block)):
-    plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent'], alpha=0.35)
-    plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35)
-plt.legend(handles=[inc_patch, con_patch, cort_line_mod, bg_line_connec, cb_line_connec], prop={'size':7.5}, loc=1)
-plt.tight_layout()
-plt.savefig('subjs_all_net_cort/allsub_cort_mod_cb_bg_con_smooth_sig1_blocks_cc_abs.png', dpi=300)
-plt.show()
-
-
-# ALL IN ONE PLOT
-## plot avg bg, cb connec -- with mod of cort
-connec_cb_bg_avg_smooth_z = np.average((con_cb_smooth_z, con_bg_smooth_z), axis=0)
-
-plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask_cort, lw=1, c=p_dict['cort_line'], label='mod_cort_line')
-plt.plot(np.arange(0, frs*rt, 2), con_cb_smooth_z, lw=1, c='tab:brown', label='connec_cb_bg_line', ls='--')
-
-plt.xticks(np.arange(0, frs*rt, 60))
-plt.xlabel('Time (s)', size=15, fontname='serif')
-plt.ylabel('Z-scored values', size=15, fontname='serif')
-
-# colour plot background with breakpoints
-for i in range(len(inc_block)):
-    plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent'], alpha=0.35)
-    plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35)
-plt.legend(handles=[inc_patch, con_patch, cort_line_mod, cb_bg_line_connec], prop={'size':7.5}, loc=1)
-plt.tight_layout()
-plt.savefig('subjs_all_net_cort/allsub_cort_mod_avg_cb_bg_con_smooth_sig1_blocks_cc_abs.png', dpi=300)
-plt.show()
-
-
 # line graph of connectivity - SUBPLOTS WITH CORT, BG, CB, THAL
 ## plot mod max, all timepoint, all subjs - smooth, with task blocks
 fig, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12,7), sharex=True)
@@ -273,9 +225,20 @@ connec_cort_allsub_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_cort
 connec_cort_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), avg_con_cort)))
 connec_cort_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_cort)))
 
+connec_cb_allsub_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_cb)))
+connec_cb_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), avg_con_cb)))
+connec_cb_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_cb)))
+
+connec_bg_allsub_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_bg)))
+connec_bg_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), avg_con_bg)))
+connec_bg_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_bg)))
+
+connec_thal_allsub_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_thal)))
+connec_thal_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), avg_con_thal)))
+connec_thal_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), avg_con_thal)))
 
 ##### SEPARATE INC AND CON BLOCKS
-# for all subjects get only inc and con mod
+# for all subjects get only inc and con connec
 connec_cort_allsub_inc = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
                                 subj[block], inc_frames_idx))), connec_cort_allsub_z)))
 connec_cort_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
@@ -283,6 +246,15 @@ connec_cort_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda
 connec_cort_allsub_fix = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
                                     subj[block] , fix_frames_idx))), connec_cort_allsub_z)))
 
+connec_cb_allsub_inc = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
+                                subj[block], inc_frames_idx))), connec_cb_allsub_z)))
+connec_cb_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
+                                subj[block], con_frames_idx))), connec_cb_allsub_z)))
+
+connec_bg_allsub_inc = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
+                                subj[block], inc_frames_idx))), connec_bg_allsub_z)))
+connec_bg_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
+                                subj[block], con_frames_idx))), connec_bg_allsub_z)))
 
 # make dataframe for plotting
 ## CORTEX
@@ -318,6 +290,45 @@ df_connec_cort_sep_blocks = pd.DataFrame(list(itertools.chain(connec_cort_inc_se
 df_cort_task = df_connec_cort_sep_blocks[(df_connec_cort_sep_blocks['task'] == 'Incongruent') | \
                           (df_connec_cort_sep_blocks['task'] == 'Congruent')]
 df_cort_fix = pd.DataFrame(connec_cort_fix_off_task_sep, columns=['con', 'block', 'task'])
+
+
+## CB
+connec_cb_inc_avg = np.mean(connec_cb_allsub_inc, axis=0)
+connec_cb_inc_sep_blocks = np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
+                    for i in np.array(list(enumerate(connec_cb_inc_avg, 1)) , dtype=object)])
+connec_cb_inc_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Incongruent'], \
+                    np.array([np.array(list(map(lambda x:[x[0], x[1]+j], i))) \
+                    for i,j in zip(connec_cb_inc_sep_blocks, range(4))]).reshape((120, 2)) ))
+
+connec_cb_con_avg = np.mean(connec_cb_allsub_con, axis=0)
+connec_cb_con_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Congruent'], \
+                        np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
+                            for i in np.array(list(enumerate(connec_cb_con_avg, 1))  , \
+                                dtype=object )]).reshape((120, 2))))
+connec_cb_con_sep_blocks = list(map(lambda x: [x[0], x[1]+x[1], x[2]], connec_cb_con_sep_blocks))
+
+df_connec_cb_sep_blocks = pd.DataFrame(list(itertools.chain(connec_cb_inc_sep_blocks, \
+                    connec_cb_con_sep_blocks)), columns=['connec', 'block', 'task'])
+df_connec_cb_sep_blocks.to_csv('df_connec_cb_sep_blocks_stroop.csv', index=False)
+
+## BG
+connec_bg_inc_avg = np.mean(connec_bg_allsub_inc, axis=0)
+connec_bg_inc_sep_blocks = np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
+                    for i in np.array(list(enumerate(connec_bg_inc_avg, 1)) , dtype=object)])
+connec_bg_inc_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Incongruent'], \
+                    np.array([np.array(list(map(lambda x:[x[0], x[1]+j], i))) \
+                    for i,j in zip(connec_bg_inc_sep_blocks, range(4))]).reshape((120, 2)) ))
+
+connec_bg_con_avg = np.mean(connec_bg_allsub_con, axis=0)
+connec_bg_con_sep_blocks = list(map(lambda xxx:[xxx[0], int(xxx[1]), 'Congruent'], \
+                        np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
+                            for i in np.array(list(enumerate(connec_bg_con_avg, 1))  , \
+                                dtype=object )]).reshape((120, 2))))
+connec_bg_con_sep_blocks = list(map(lambda x: [x[0], x[1]+x[1], x[2]], connec_bg_con_sep_blocks))
+
+df_connec_bg_sep_blocks = pd.DataFrame(list(itertools.chain(connec_bg_inc_sep_blocks, \
+                    connec_bg_con_sep_blocks)), columns=['connec', 'block', 'task'])
+df_connec_bg_sep_blocks.to_csv('df_connec_bg_sep_blocks_stroop.csv', index=False)
 
 
 ###### POINTPLOT OF CI CORT - two subplots
@@ -420,3 +431,30 @@ df_mlm_con_melt_off = pd.melt(df_mlm_con_off_task, id_vars=['subj_ID', 'task'], 
 df_mlm_off_task = pd.concat([df_mlm_con_melt_off, df_mlm_inc_melt_off], ignore_index=True)
 # print(df_mlm_off_task)
 df_mlm_off_task.to_csv('off_task_block_mu_connec.csv', index=False)
+
+
+
+# FULL TS, BG-CTX
+df_mlm_ts = pd.DataFrame(connec_bg_allsub_smooth_z)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='connec_bg')
+df_mlm_ts_melt.to_csv('bg_connec_ts.csv', index=False)
+
+# FULL TS, CB-CTX
+df_mlm_ts = pd.DataFrame(connec_cb_allsub_smooth_z)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='connec_cb')
+df_mlm_ts_melt.to_csv('cb_connec_ts.csv', index=False)
+
+# FULL TS,THAL-CTX
+df_mlm_ts = pd.DataFrame(connec_thal_allsub_smooth_z)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='connec_thal')
+df_mlm_ts_melt.to_csv('thal_connec_ts.csv', index=False)
+

@@ -49,12 +49,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import ptitprince as pt
 
-# np.set_printoptions(threshold=sys.maxsize)
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_colwidth', None)
-pd.set_option('display.max_columns', None)
-
-
 
 # load edge time series by region
 # save_con(subj_lst, task='all', region='cort')
@@ -62,6 +56,7 @@ pd.set_option('display.max_columns', None)
 # save_con(subj_lst, task='all', region='bg')
 # save_con(subj_lst, task='stroop', region='thal')
 
+"""
 # average across nodes, then subjects, smooth, z
 # cortical nodes
 con_allsub_cort = np.load(f'subjs_all_net_cort_stroop.npy')
@@ -72,8 +67,6 @@ avg_all_con_cort = np.average(avg_con_cort, axis=0)
 con_cort_smooth = gaussian_filter(avg_all_con_cort, sigma=1)
 con_cort_smooth_z = stats.zscore(con_cort_smooth)
 
-# plt.plot( con_cort_smooth_z )
-# plt.show()
 
 # cb nodes
 con_allsub_cb = np.load(f'subjs_all_net_cb_stroop.npy')
@@ -101,7 +94,7 @@ avg_con_thal = np.array(list(map(lambda sub: np.array(list(map(lambda t: \
 avg_all_con_thal = np.average(avg_con_thal, axis=0)
 con_thal_smooth = gaussian_filter(avg_all_con_thal, sigma=1)
 con_thal_smooth_z = stats.zscore(con_thal_smooth)
-
+"""
 
 # load modularity time series, remove init 5, smooth, z score
 # save_mod_idx(subj_lst, task='all', region='cort')
@@ -113,11 +106,23 @@ con_thal_smooth_z = stats.zscore(con_thal_smooth)
 # save_mod_idx_adj_cort(subj_lst, task='stroop', region='bg')
 # save_mod_idx_adj_cort(subj_lst, task='stroop', region='thal')
 
-
+# cortex
 q_allsub = np.load(f'subjs_all_net_cort_q_stroop.npy')
 q_allsub_z = np.array(list(map(lambda i: stats.zscore(i[5:]), q_allsub)))
 q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), q_allsub)))
 q_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), q_allsub_smooth)))
+
+q_allsub_smooth_z_all = np.array(list(map(lambda i: stats.zscore(i), \
+                            np.array(list(map(lambda i: gaussian_filter(i, sigma=1), \
+                                              q_allsub))))))
+
+q_allsub_smooth_allpts = np.array(list(map(lambda i: gaussian_filter(i, sigma=1), q_allsub)))
+q_allsub_smooth_z_allpts = np.array(list(map(lambda i: stats.zscore(i), q_allsub_smooth_allpts)))
+
+q_avg_smooth_allpts = np.average(q_allsub_smooth_allpts, axis=0)
+q_avg_smooth_z_allpts = stats.zscore(q_avg_smooth_allpts)
+np.save(f'q_avg_smooth_z_allpts_cort_stroop.npy', q_avg_smooth_z_allpts)
+# sys.exit()
 
 # modularity bg, cb, thal
 # q_cb_allsub = np.load(f'subjs_all_net_cb_q_stroop.npy')
@@ -168,7 +173,7 @@ q_avg_smooth_mask = np.ma.array(np.insert(q_avg_smooth, 0, np.ones(5)), \
                                 mask=np.pad(np.ones(5), (0,frs-5)))
 q_avg_smooth_z_mask = np.ma.array(np.insert(q_avg_smooth_z, 0, np.ones(5)), \
                                   mask=np.pad(np.ones(5), (0,frs-5)))
-np.save(f'q_avg_smooth_z_cort_stroop.npy', q_avg_smooth_z)
+# np.save(f'q_avg_smooth_z_cort_stroop.npy', q_avg_smooth_z)
 
 q_cb_avg_smooth_z_mask = np.ma.array(np.insert(q_cb_avg_smooth_z, 0, np.ones(5)), \
                                   mask=np.pad(np.ones(5), (0,frs-5)))
@@ -308,6 +313,7 @@ q_fix_off_task_sep = list(map(lambda i: [i[0], i[1], 'Incongruent Fixation'] \
 
 df_q_sep_blocks = pd.DataFrame(list(itertools.chain(q_inc_sep_blocks, q_con_sep_blocks, q_fix_sep_blocks)), \
                                columns=['mod_idx', 'block', 'task'])
+df_q_sep_blocks.to_csv('df_q_cort_sep_blocks_stroop.csv', index=False)
 
 df_task = df_q_sep_blocks[(df_q_sep_blocks['task'] == 'Incongruent') | \
                           (df_q_sep_blocks['task'] == 'Congruent')]
@@ -352,7 +358,6 @@ plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplo
 plt.show()
 
 
-sys.exit()
 
 
 ##### ON TASK
@@ -376,6 +381,19 @@ df_mlm = pd.concat([df_mlm_con_melt, df_mlm_inc_melt], ignore_index=True)
 # print(df_mlm)
 df_mlm.to_csv('on_task_block_mu_mod_idx.csv', index=False)
 
+
+# FULL TS
+# get data for full timescale
+df_mlm_ts = pd.DataFrame(q_allsub_smooth_z_all)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='mod_idx')
+df_mlm_ts_melt.insert(2, 'inc_reg', np.tile(inc_regressor, len(subj_lst)))
+df_mlm_ts_melt.insert(3, 'con_reg', np.tile(con_regressor, len(subj_lst)))
+df_mlm_ts_melt.to_csv('cort_mod_idx_reg_ts.csv', index=False)
+
+sys.exit()
 
 ###### MIXED EFFECTS - con=1, incon=0
 # run mixed effects model - on task, inc and con
