@@ -82,10 +82,14 @@ np.save(f'eigen_cen_thal_allsub_{task}.npy', eigen_thal_lst)
 """
 
 
-
 eigen_cen_cb_allsub = np.load(f'eigen_cen_cb_allsub_stroop.npy')
 eigen_cen_bg_allsub = np.load(f'eigen_cen_bg_allsub_stroop.npy')
 # eigen_cen_thal_allsub = np.load(f'eigen_cen_thal_allsub_stroop.npy')
+
+eigen_cen_cb_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i, sigma=1), eigen_cen_cb_allsub)))
+eigen_cen_cb_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), eigen_cen_cb_allsub_smooth)))
+eigen_cen_bg_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i, sigma=1), eigen_cen_bg_allsub)))
+eigen_cen_bg_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), eigen_cen_bg_allsub_smooth)))
 
 eigen_cen_cb_avg = np.average(eigen_cen_cb_allsub, axis=0)
 eigen_cen_bg_avg = np.average(eigen_cen_bg_allsub, axis=0)
@@ -99,26 +103,30 @@ np.save(f'eigen_cen_cb_avg_smooth_z_stroop.npy', eigen_cen_cb_avg_smooth_z)
 np.save(f'eigen_cen_bg_avg_smooth_z_stroop.npy', eigen_cen_bg_avg_smooth_z)
 
 print(f'\nEigenvector centrality corr_coef, BG and CB: ', \
-            np.corrcoef(eigen_cen_cb_avg_smooth_z, eigen_cen_bg_avg_smooth_z)[0][1]) # [1][0]
+            np.corrcoef(eigen_cen_cb_avg_smooth_z, eigen_cen_bg_avg_smooth_z)[0][1], '\n') # [1][0]
 
-# plt.plot(eigen_cen_bg_avg, label='eigen_bg', c='tab:blue')
-# plt.plot(eigen_cen_cb_avg, label='eigen_cb', c='tab:red')
-# plt.legend()
-# plt.tight_layout()
-# plt.show()
-#
-# plt.plot(eigen_cen_bg_avg_smooth, label='eigen_bg', c='tab:blue')
-# plt.plot(eigen_cen_cb_avg_smooth, label='eigen_cb', c='tab:red')
-# plt.legend()
-# plt.tight_layout()
-# plt.show()
+# FULL TS, CB-CTX
+df_mlm_ts = pd.DataFrame(eigen_cen_cb_allsub_smooth_z)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='eigen_cb')
+df_mlm_ts_melt.to_csv('cb_eigenvec_cen_ts.csv', index=False)
+
+# FULL TS, BG-CTX
+df_mlm_ts = pd.DataFrame(eigen_cen_bg_allsub_smooth_z)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='eigen_bg')
+df_mlm_ts_melt.to_csv('bg_eigenvec_cen_ts.csv', index=False)
 
 
 ## plot avg subj bg and cb eigenvector connectivity
 plt.rcParams['figure.figsize'] = (8,4)
 
-plt.plot(np.arange(0, frs*rt, 2), eigen_cen_bg_avg_smooth_z, lw=0.8, c=p_dict['bg_line_eig']) # #3c0008
-plt.plot(np.arange(0, frs*rt, 2), eigen_cen_cb_avg_smooth_z, lw=0.8, c=p_dict['cb_line_eig'], alpha=0.8) # #BC544B, #A91B0D
+plt.plot(np.arange(0, frs*rt, 2), gaussian_filter(eigen_cen_bg_avg_smooth_z, sigma=1), lw=0.8, c=p_dict['bg_line_eig']) #8A9A5B #3c0008
+plt.plot(np.arange(0, frs*rt, 2), gaussian_filter(eigen_cen_cb_avg_smooth_z, sigma=1), lw=0.8, c=p_dict['cb_line_eig']) # #BC544B, #A91B0D
 plt.xticks(np.arange(0, frs*rt, 60))
 plt.xlabel('Time (s)', size=12, fontname='serif')
 plt.ylabel('Eigenvector Centrality (z-score)', size=12, fontname='serif')
@@ -132,6 +140,6 @@ for i in range(len(inc_block)):
 # plt.ylim(-3.5, 2.25)
 plt.legend(handles=[inc_patch, con_patch, bg_line_eig, cb_line_eig], loc=1, prop={'size':7.5})
 plt.tight_layout()
-plt.savefig('eigenvec_cen_bg_cb_smooth_sig1_blocks_cc_z.png', dpi=300)
+plt.savefig('eigenvec_cen_bg_cb_smooth_sig2_blocks_cc_z.png', dpi=300)
 plt.show()
 

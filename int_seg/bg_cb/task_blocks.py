@@ -44,6 +44,12 @@ inc_block = list(zip(inc_cond[0], inc_cond[0]+inc_cond[1][0]))
 con_block = list(zip(con_cond[0], con_cond[0]+con_cond[1][0]))
 fix_block = list(zip(fix_cond[0], fix_cond[0]+fix_cond[1][0]))
 
+# get frames for start of inc and end of fix after con
+inc_lst = sum(inc_block, ())
+# con_lst = list(np.array(sum(con_block, ())[:-1])+10)+[con_block[-1][-1]]
+con_lst = list(np.array(sum(con_block, ()))+10)
+
+group_blocks = np.array(list(zip(inc_lst[::2], con_lst[1::2])))/2
 # indices for inc and con, fix
 inc_block_frames = np.array(inc_block)/2
 inc_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), \
@@ -56,6 +62,13 @@ con_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), 
 fix_block_frames = np.array(fix_block)/2
 fix_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), \
                                                         fix_block_frames)))[1:] -5
+
+inc_frames = [list(range(int(i[0]), int(i[1])+1)) for i in inc_block_frames]
+con_frames = [list(range(int(i[0]), int(i[1])+1)) for i in con_block_frames]
+fix_frames = [list(range(int(i[0]), int(i[1])+1)) for i in fix_block_frames]
+
+# print(inc_block_frames)
+# print(group_blocks)
 
 #### HRF PREDICT
 # timepoints of image capture

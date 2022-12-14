@@ -109,7 +109,7 @@ con_thal_smooth_z = stats.zscore(con_thal_smooth)
 # cortex
 q_allsub = np.load(f'subjs_all_net_cort_q_stroop.npy')
 q_allsub_z = np.array(list(map(lambda i: stats.zscore(i[5:]), q_allsub)))
-q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), q_allsub)))
+q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=2), q_allsub))) # sigma=2
 q_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), q_allsub_smooth)))
 
 q_allsub_smooth_z_all = np.array(list(map(lambda i: stats.zscore(i), \
@@ -119,7 +119,8 @@ q_allsub_smooth_z_all = np.array(list(map(lambda i: stats.zscore(i), \
 q_allsub_smooth_allpts = np.array(list(map(lambda i: gaussian_filter(i, sigma=1), q_allsub)))
 q_allsub_smooth_z_allpts = np.array(list(map(lambda i: stats.zscore(i), q_allsub_smooth_allpts)))
 
-q_avg_smooth_allpts = np.average(q_allsub_smooth_allpts, axis=0)
+q_avg_allpts = np.average(q_allsub, axis=0)
+q_avg_smooth_allpts = gaussian_filter(q_avg_allpts, sigma=1)
 q_avg_smooth_z_allpts = stats.zscore(q_avg_smooth_allpts)
 np.save(f'q_avg_smooth_z_allpts_cort_stroop.npy', q_avg_smooth_z_allpts)
 # sys.exit()
@@ -183,6 +184,64 @@ q_thal_avg_smooth_z_mask = np.ma.array(np.insert(q_thal_avg_smooth_z, 0, np.ones
                                   mask=np.pad(np.ones(5), (0,frs-5)))
 
 
+## SINGLE CORTEX LINE GRAPH
+## plot mod max, all timepoint, all subjs - smooth, with task blocks
+# plt.axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(15, 10))
+plt.axhline(y=0, c='k', lw=1.2, alpha=0.2, ls='--', dashes=(5, 5))
+plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask, lw=1, c=p_dict['cort_line']) # dimgrey, gray, #757575
+
+plt.xticks(np.arange(0, frs*rt, 60))
+plt.xlabel('Time (s)', size=15, fontname='serif')
+plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
+
+# colour plot background with breakpoints
+for i in range(len(inc_block)):
+    # incongruent
+    plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent_cb'], alpha=0.15) # tab:orange, 0.22 - cc, .35
+    # congruent
+    plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent_cb'], alpha=0.16) # tab:blue, 0.2, #91C1E2
+# plt.ylim(0.43, 0.45) # mask mod, no z
+plt.ylim(-3.5, 2.25)
+plt.legend(handles=[inc_patch_cb, con_patch_cb], loc=4)
+plt.tight_layout()
+plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig1_blocks_mask_init_cb.png', dpi=300)
+plt.show()
+
+
+## SINGLE CORTEX LINE GRAPH - with CI spread
+mod_ci_all = list(map(lambda i: st.norm.interval(alpha=0.95, loc=np.mean(i), scale=st.sem(i)), q_allsub_smooth_z_allpts.T))
+mod_lb = stats.zscore(np.array(mod_ci_all).T[0])
+mod_ub = stats.zscore(np.array(mod_ci_all).T[1])
+mod_sterr_allpts = list(map(lambda i: st.sem(i), q_allsub_smooth_z_allpts.T))
+mod_std_allpts = list(map(lambda i: np.std(i), q_allsub_smooth_z_allpts.T))
+
+plt.axhline(y=0, c='k', lw=1.2, alpha=0.2, ls='--', dashes=(5, 5))
+plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask, lw=1, c=p_dict['cort_line_cb']) # 0.2
+# plt.plot(np.arange(0, frs*rt, 2), mod_lb, lw=1, c='r')
+# plt.plot(np.arange(0, frs*rt, 2), mod_ub, lw=1, c='b')
+# plt.fill_between(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask-mod_sterr_allpts, q_avg_smooth_z_mask+mod_sterr_allpts, lw=0, color=p_dict['cort_line'], alpha=0.7)
+plt.fill_between(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask-mod_std_allpts, q_avg_smooth_z_mask+mod_std_allpts, lw=0, color=p_dict['cort_line'], alpha=0.6)
+
+plt.xticks(np.arange(0, frs*rt, 60))
+plt.xlabel('Time (s)', size=15, fontname='serif')
+plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
+
+# colour plot background with breakpoints
+for i in range(len(inc_block)):
+    # incongruent
+    plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent_cb'], alpha=0.15) # tab:orange, 0.22 - cc, .35
+    # congruent
+    plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent_cb'], alpha=0.16) # tab:blue, 0.2, #91C1E2
+# plt.ylim(-3.5, 2.25)
+plt.ylim(-4.5, 3.25)
+plt.legend(handles=[inc_patch_cb, con_patch_cb], loc=4)
+plt.tight_layout()
+plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_std.png', dpi=2000)
+plt.show()
+
+sys.exit()
+
+
 #### MOD LINE GRAPH - ALL TOGETHER
 # plot part coeff, all timepoint
 plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask, lw=1, \
@@ -204,27 +263,6 @@ for i in range(len(inc_block)):
 plt.legend(handles=[inc_patch, con_patch, cort_line, bg_line, cb_line], prop={'size':6}, loc=4)
 plt.tight_layout()
 plt.savefig('subjs_all_net_cort/mod/allsub_cort_cb_bg_mod_smooth_z_cc.png', dpi=300)
-plt.show()
-
-## SINGLE CORTEX LINE GRAPH
-## plot mod max, all timepoint, all subjs - smooth, with task blocks
-plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask, lw=1, c=p_dict['cort_line']) # dimgrey, gray, #757575
-
-plt.xticks(np.arange(0, frs*rt, 60))
-plt.xlabel('Time (s)', size=15, fontname='serif')
-plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
-
-# colour plot background with breakpoints
-for i in range(len(inc_block)):
-    # incongruent
-    plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent'], alpha=0.35) # tab:orange, 0.22
-    # congruent
-    plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35) # tab:blue, 0.2, #91C1E2
-# plt.ylim(0.43, 0.45) # mask mod, no z
-plt.ylim(-3.5, 2.25)
-plt.legend(handles=[inc_patch, con_patch], loc=4)
-plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig1_blocks_mask_init_cc.png', dpi=300)
 plt.show()
 
 
@@ -338,7 +376,7 @@ plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplo
 plt.show()
 
 
-###### POINTPLOT OF CI - two subplots
+###### POINTPLOT OF CI - two subplots - on and off task
 # fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[2,3]})
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12,5))
 sns.pointplot(ax=ax1, x='block', y='mod_idx', hue='task', data=df_task, \
@@ -357,8 +395,16 @@ plt.tight_layout()
 plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_subplots_cc.png', dpi=300)
 plt.show()
 
-
-
+###### POINTPLOT OF CI - on task only
+# fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[2,3]})
+sns.pointplot(x='block', y='mod_idx', hue='task', data=df_task, \
+                    join=False, palette=p_dict, errwidth=5, scale=2) # capsize=0.5
+plt.xlabel('On Task Block', size=15, fontname='serif')
+plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
+plt.legend((inc_circ, con_circ), ('Incongruent', 'Congruent'), numpoints=1, loc=1)
+plt.tight_layout()
+plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_ontask_cc.png', dpi=300)
+plt.show()
 
 ##### ON TASK
 # prepare melt df with subj_id, task, block and mean mod_idx by block
