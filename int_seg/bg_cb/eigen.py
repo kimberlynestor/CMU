@@ -105,6 +105,7 @@ np.save(f'eigen_cen_bg_avg_smooth_z_stroop.npy', eigen_cen_bg_avg_smooth_z)
 print(f'\nEigenvector centrality corr_coef, BG and CB: ', \
             np.corrcoef(eigen_cen_cb_avg_smooth_z, eigen_cen_bg_avg_smooth_z)[0][1], '\n') # [1][0]
 
+
 # FULL TS, CB-CTX
 df_mlm_ts = pd.DataFrame(eigen_cen_cb_allsub_smooth_z)
 df_mlm_ts.columns +=1 # start column count from 1
@@ -113,6 +114,20 @@ df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
                                  var_name='frame', value_name='eigen_cb')
 df_mlm_ts_melt.to_csv('cb_eigenvec_cen_ts.csv', index=False)
 
+## average task blocks
+eigen_cen_cb_allsub_smooth_z_pad = np.array(list(map(lambda sub:np.pad(sub, (0,10), \
+                                mode='constant', constant_values=np.nan), eigen_cen_cb_allsub_smooth_z)))
+eigen_cb_avg_blocks_allsub = np.array(list(map(lambda sub: np.nanmean(np.array(list(\
+                                map(lambda i : sub[int(i[0]):int(i[1])+1], group_blocks))), \
+                                    axis=0), eigen_cen_cb_allsub_smooth_z_pad)))
+
+df_mlm_ts = pd.DataFrame(eigen_cb_avg_blocks_allsub)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='eigen_cb')
+df_mlm_ts_melt.to_csv('cb_eigenvec_cen_ts_avg_blks.csv', index=False)
+
 # FULL TS, BG-CTX
 df_mlm_ts = pd.DataFrame(eigen_cen_bg_allsub_smooth_z)
 df_mlm_ts.columns +=1 # start column count from 1
@@ -120,6 +135,20 @@ df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
 df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
                                  var_name='frame', value_name='eigen_bg')
 df_mlm_ts_melt.to_csv('bg_eigenvec_cen_ts.csv', index=False)
+
+## average task blocks
+eigen_cen_bg_allsub_smooth_z_pad = np.array(list(map(lambda sub:np.pad(sub, (0,10), \
+                                mode='constant', constant_values=np.nan), eigen_cen_bg_allsub_smooth_z)))
+eigen_bg_avg_blocks_allsub = np.array(list(map(lambda sub: np.nanmean(np.array(list(\
+                                map(lambda i : sub[int(i[0]):int(i[1])+1], group_blocks))), \
+                                    axis=0), eigen_cen_bg_allsub_smooth_z_pad)))
+
+df_mlm_ts = pd.DataFrame(eigen_bg_avg_blocks_allsub)
+df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='eigen_bg')
+df_mlm_ts_melt.to_csv('bg_eigenvec_cen_ts_avg_blks.csv', index=False)
 
 
 ## plot avg subj bg and cb eigenvector connectivity
@@ -140,6 +169,7 @@ for i in range(len(inc_block)):
 # plt.ylim(-3.5, 2.25)
 plt.legend(handles=[inc_patch, con_patch, bg_line_eig, cb_line_eig], loc=1, prop={'size':7.5})
 plt.tight_layout()
-plt.savefig('eigenvec_cen_bg_cb_smooth_sig2_blocks_cc_z.png', dpi=300)
-plt.show()
+# plt.savefig('eigenvec_cen_bg_cb_smooth_sig2_blocks_cc_z.png', dpi=300)
+# plt.show()
+plt.close()
 

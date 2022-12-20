@@ -109,7 +109,7 @@ con_thal_smooth_z = stats.zscore(con_thal_smooth)
 # cortex
 q_allsub = np.load(f'subjs_all_net_cort_q_stroop.npy')
 q_allsub_z = np.array(list(map(lambda i: stats.zscore(i[5:]), q_allsub)))
-q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=2), q_allsub))) # sigma=2
+q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), q_allsub))) # sigma=2
 q_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), q_allsub_smooth)))
 
 q_allsub_smooth_z_all = np.array(list(map(lambda i: stats.zscore(i), \
@@ -123,7 +123,13 @@ q_avg_allpts = np.average(q_allsub, axis=0)
 q_avg_smooth_allpts = gaussian_filter(q_avg_allpts, sigma=1)
 q_avg_smooth_z_allpts = stats.zscore(q_avg_smooth_allpts)
 np.save(f'q_avg_smooth_z_allpts_cort_stroop.npy', q_avg_smooth_z_allpts)
-# sys.exit()
+
+## average task blocks
+q_allsub_smooth_z_allpts_pad = np.array(list(map(lambda sub:np.pad(sub, (0,10), \
+                                mode='constant', constant_values=np.nan), q_allsub_smooth_z_allpts)))
+mod_cort_avg_blocks_allsub = np.array(list(map(lambda sub: np.nanmean(np.array(list(\
+                                map(lambda i : sub[int(i[0]):int(i[1])+1], group_blocks))), \
+                                    axis=0), q_allsub_smooth_z_allpts_pad)))
 
 # modularity bg, cb, thal
 # q_cb_allsub = np.load(f'subjs_all_net_cb_q_stroop.npy')
@@ -204,8 +210,9 @@ for i in range(len(inc_block)):
 plt.ylim(-3.5, 2.25)
 plt.legend(handles=[inc_patch_cb, con_patch_cb], loc=4)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig1_blocks_mask_init_cb.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig1_blocks_mask_init_cb.png', dpi=300)
+# plt.show()
+plt.close()
 
 
 ## SINGLE CORTEX LINE GRAPH - with CI spread
@@ -236,11 +243,10 @@ for i in range(len(inc_block)):
 plt.ylim(-4.5, 3.25)
 plt.legend(handles=[inc_patch_cb, con_patch_cb], loc=4)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_std.png', dpi=2000)
+# plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qall_smooth_sig1_blocks_mask_init_cb_yerr_std.png', dpi=2000)
 plt.show()
 
-sys.exit()
-
+###### FIX THIS SIG 2 ISSUE ^^^
 
 #### MOD LINE GRAPH - ALL TOGETHER
 # plot part coeff, all timepoint
@@ -262,8 +268,9 @@ for i in range(len(inc_block)):
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35) # tab:blue, 0.2, #91C1E2
 plt.legend(handles=[inc_patch, con_patch, cort_line, bg_line, cb_line], prop={'size':6}, loc=4)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cort_cb_bg_mod_smooth_z_cc.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/mod/allsub_cort_cb_bg_mod_smooth_z_cc.png', dpi=300)
+# plt.show()
+plt.close()
 
 
 # SUBPLOTS WITH BG, CB, THAL
@@ -309,10 +316,10 @@ ax4.set_ylim(-3.5, 3.25)
 # plt.legend(handles=[inc_patch, con_patch], loc=4)
 plt.legend(handles=[inc_patch, con_patch, cort_line, bg_line, cb_line, thal_line], loc=4, prop={'size':6})
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cort_cb_bg_thal_mod_smooth_sig1_blocks_mask_init_cc_subplots.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/mod/allsub_cort_cb_bg_thal_mod_smooth_sig1_blocks_mask_init_cc_subplots.png', dpi=300)
+# plt.show()
+plt.close()
 ##############
-
 
 
 ##### SEPARATE INC AND CON BLOCKS
@@ -324,7 +331,28 @@ q_allsub_con = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
 q_allsub_fix = np.array(list(map(lambda subj: np.array(list(map(lambda block: \
                                     subj[block] , fix_frames_idx))) ,q_allsub_z)))
 
-# make dataframe for plotting
+# make dataframe for plotting - all subjects, avg blocks
+q_inc_avg_all = np.array(list(map(lambda sub: np.mean(sub, axis=1), q_allsub_inc)))
+q_inc_sep_blocks_all = np.array(list(map(lambda sub: np.array(list(enumerate(sub, 1))), q_inc_avg_all)))
+q_inc_sep_blocks_all = list(map(lambda x: [x[0], int(x[1]), 'inc'], \
+                            np.array(list(map(lambda sub: [[j[1], j[0]+i] \
+                                for i,j in zip(range(4), sub)], q_inc_sep_blocks_all))).\
+                                    reshape(968, 2)))
+
+q_con_avg_all = np.array(list(map(lambda sub: np.mean(sub, axis=1), q_allsub_con)))
+q_con_sep_blocks_all = list(map(lambda x: [x[1], int(x[0]), 'con'], \
+                            np.array(list(map(lambda sub: np.array(list(enumerate(sub, 1))), \
+                                        q_con_avg_all))).reshape(968, 2) ))
+q_con_sep_blocks_all = list(map(lambda x: [x[0], x[1]+x[1], x[2]], q_con_sep_blocks_all))
+
+df_task_all = pd.DataFrame(list(itertools.chain(q_inc_sep_blocks_all, q_con_sep_blocks_all)), \
+                               columns=['mod_idx', 'block', 'task'])
+
+# sns.stripplot(data=df_task_all, x='block', y='mod_idx', hue='task', palette=p_dict_cb, jitter=0.2, alpha=0.7)
+# plt.show()
+
+
+# make dataframe for plotting - average subjects, all block
 q_inc_avg = np.mean(q_allsub_inc, axis=0)
 q_inc_sep_blocks = np.array([np.array(list(map(lambda x: [x, i[0]], i[1])))  \
                     for i in np.array(list(enumerate(q_inc_avg, 1)) , dtype=object)])
@@ -372,8 +400,9 @@ plt.xlabel("Task block", size=14, fontname="serif")
 plt.ylabel('Modularity (Q/z)', size=14, fontname="serif")
 plt.legend((inc_circ, con_circ, fix_circ), ('Incongruent', 'Congruent', 'Fixation'), numpoints=1)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_wr_cc.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_wr_cc.png', dpi=300)
+# plt.show()
+plt.close()
 
 
 ###### POINTPLOT OF CI - two subplots - on and off task
@@ -392,19 +421,42 @@ ax1.legend((inc_circ, con_circ), ('Incongruent', 'Congruent'), numpoints=1, loc=
 ax2.legend('', frameon=False)
 fig.legend('', frameon=False)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_subplots_cc.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_subplots_cc.png', dpi=300)
+# plt.show()
+plt.close()
+
 
 ###### POINTPLOT OF CI - on task only
 # fig, (ax1, ax2) = plt.subplots(1, 2, gridspec_kw={'width_ratios':[2,3]})
-sns.pointplot(x='block', y='mod_idx', hue='task', data=df_task, \
-                    join=False, palette=p_dict, errwidth=5, scale=2) # capsize=0.5
+g = sns.pointplot(x='block', y='mod_idx', hue='task', data=df_task, \
+                    join=False, palette=p_dict_cb, errwidth=5, scale=2, alpha=0.9) # capsize=0.5
+# plt.setp(g.collections, alpha=0.95)
+# plt.setp(g.lines, alpha=0.95)
 plt.xlabel('On Task Block', size=15, fontname='serif')
 plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
-plt.legend((inc_circ, con_circ), ('Incongruent', 'Congruent'), numpoints=1, loc=1)
+plt.legend((inc_circ_cb, con_circ_cb), ('Incongruent', 'Congruent'), numpoints=1, loc=1)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_ontask_cc.png', dpi=300)
+# plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_ontask_cb.png', dpi=2000)
 plt.show()
+
+###### POINTPLOT OF CI - on task only - ind sub points
+sns.pointplot(x='block', y='mod_idx', hue='task', data=df_task, \
+                join=False, palette=p_dict_cb, errwidth=3.3, scale=0.8, alpha=0.9, zorder=5)
+sns.stripplot(data=df_task_all, x='block', y='mod_idx', hue='task', \
+              palette=p_dict_cb, size=2.7, jitter=0.38, alpha=0.5, zorder=0.2)
+plt.axhline(y=0, c='k', lw=1.2, alpha=0.3, ls='--', dashes=(5, 7), zorder=0)
+
+plt.xlabel('On Task Block', size=15, fontname='serif')
+plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
+plt.ylim(-0.9, 0.7)
+plt.yticks(np.arange(-0.8, 0.8, 0.2))
+
+plt.legend((inc_circ_cb, con_circ_cb), ('Incongruent', 'Congruent'), numpoints=1, loc=1)
+plt.tight_layout()
+# plt.savefig('subjs_all_net_cort/mod/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_ontask_cb_indsub.png', dpi=2000)
+# plt.show()
+plt.close()
+
 
 ##### ON TASK
 # prepare melt df with subj_id, task, block and mean mod_idx by block
@@ -428,7 +480,7 @@ df_mlm = pd.concat([df_mlm_con_melt, df_mlm_inc_melt], ignore_index=True)
 df_mlm.to_csv('on_task_block_mu_mod_idx.csv', index=False)
 
 
-# FULL TS
+# FULL TS - make df save
 # get data for full timescale
 df_mlm_ts = pd.DataFrame(q_allsub_smooth_z_all)
 df_mlm_ts.columns +=1 # start column count from 1
@@ -439,7 +491,17 @@ df_mlm_ts_melt.insert(2, 'inc_reg', np.tile(inc_regressor, len(subj_lst)))
 df_mlm_ts_melt.insert(3, 'con_reg', np.tile(con_regressor, len(subj_lst)))
 df_mlm_ts_melt.to_csv('cort_mod_idx_reg_ts.csv', index=False)
 
-sys.exit()
+## average blocks
+df_mlm_ts_avg_blks = pd.DataFrame(mod_cort_avg_blocks_allsub)
+
+df_mlm_ts_avg_blks.columns +=1 # start column count from 1
+df_mlm_ts_avg_blks.insert(0, 'subj_ID', [int(i) for i in subj_lst])
+df_mlm_ts_avg_blks_melt = pd.melt(df_mlm_ts_avg_blks, id_vars=['subj_ID'], \
+                                 var_name='frame', value_name='mod_idx')
+df_mlm_ts_avg_blks_melt.insert(2, 'inc_reg', np.tile(inc_regressor[int(group_blocks[0][0]):int(group_blocks[0][1]+1)], len(subj_lst)))
+df_mlm_ts_avg_blks_melt.insert(3, 'con_reg', np.tile(con_regressor[int(group_blocks[0][0]):int(group_blocks[0][1]+1)], len(subj_lst)))
+df_mlm_ts_avg_blks_melt.to_csv('cort_mod_idx_reg_ts_avg_blks.csv', index=False)
+
 
 ###### MIXED EFFECTS - con=1, incon=0
 # run mixed effects model - on task, inc and con
@@ -671,7 +733,8 @@ plt.ylabel('Beta coefficients (Q)', size=20, fontname="serif")
 # plt.subplots_adjust(wspace=.2)
 plt.tight_layout()
 # plt.savefig('subjs_all_net_cort/mlr/allsub_cortnet_mod_swarm_diff.png', dpi=300)
-plt.show()
+# plt.show()
+plt.close()
 
 
 ## STRIPLOT
@@ -686,7 +749,8 @@ plt.xlabel('Task block', size=10.5, fontname="serif")
 plt.ylabel('Beta coefficients (Q)', size=10.5, fontname="serif")
 plt.tight_layout()
 # plt.savefig('subjs_all_net_cort/mlr/allsub_cortnet_stripplot_diff.png', dpi=300)
-plt.show()
+# plt.show()
+plt.close()
 
 
 # print(df_coeffs)

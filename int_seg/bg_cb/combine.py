@@ -15,6 +15,7 @@ import pandas as pd
 from scipy.ndimage import gaussian_filter
 import scipy.stats as st
 from scipy import stats
+from scipy import signal
 
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
@@ -40,7 +41,6 @@ connec_cb_bg_avg_smooth_z = np.average((con_cb_smooth_z, con_bg_smooth_z), axis=
 
 eigen_cen_cb_avg_smooth_z = np.load('eigen_cen_cb_avg_smooth_z_stroop.npy')
 eigen_cen_bg_avg_smooth_z = np.load('eigen_cen_bg_avg_smooth_z_stroop.npy')
-
 
 print(f'\ncorr_coef bg x cb eigen: {np.corrcoef(eigen_cen_cb_avg_smooth_z, eigen_cen_bg_avg_smooth_z)[0][1]}')
 print(f'corr_coef cort connec x cb eigen: {np.corrcoef(con_cort_smooth_z, eigen_cen_cb_avg_smooth_z)[0][1]}')
@@ -79,7 +79,6 @@ eigen_bg_sterr_allpts = list(map(lambda i: st.sem(i), eigen_bg_allsub_avg_blocks
 eigen_bg_std_allpts = list(map(lambda i: np.std(i), eigen_bg_allsub_avg_blocks_smooth_z.T))
 
 
-
 # ALL IN ONE PLOT
 ## plot connectivity from cb, bg -- with modularity of cort
 
@@ -97,8 +96,9 @@ for i in range(len(inc_block)):
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35)
 plt.legend(handles=[inc_patch, con_patch, cort_line_mod, bg_line_connec, cb_line_connec], prop={'size':7.5}, loc=1)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/allsub_cort_mod_cb_bg_con_smooth_sig1_blocks_cc_abs.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/allsub_cort_mod_cb_bg_con_smooth_sig1_blocks_cc_abs.png', dpi=300)
+# plt.show()
+plt.close()
 
 
 # ALL IN ONE PLOT
@@ -120,8 +120,9 @@ for i in range(len(inc_block)):
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35)
 plt.legend(handles=[inc_patch, con_patch, cort_line_connec, bg_line_eig_lbl, cb_line_eig_lbl], prop={'size':7.5}, loc=1)
 plt.tight_layout()
-plt.savefig('eigenvec_cen_bg_cb_connec_cort_smooth_sig1_blocks_cc_z.png', dpi=300)
-plt.show()
+# plt.savefig('eigenvec_cen_bg_cb_connec_cort_smooth_sig1_blocks_cc_z.png', dpi=300)
+# plt.show()
+plt.close()
 
 ## plot eigenvec cen from cb, bg -- with modularity of cort
 plt.rcParams['figure.figsize'] = (8,4)
@@ -141,11 +142,12 @@ for i in range(len(inc_block)):
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35)
 plt.legend(handles=[inc_patch, con_patch, cort_line_mod_eig, bg_line_eig_lbl, cb_line_eig_lbl], prop={'size':7.5}, loc=1)
 plt.tight_layout()
-plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig1_blocks_cc_z.png', dpi=300)
-plt.show()
+# plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig1_blocks_cc_z.png', dpi=300)
+# plt.show()
+plt.close()
 
 
-# AVERAGE TASK BLOCKS line graph - eigen cb, bg; mod cort
+# AVERAGE TASK BLOCKS line graph - eigen cb, bg; mod cort - average subjects
 q_avg_smooth_z_cort_pad = np.pad(q_avg_smooth_z_cort, (0,10), mode='constant', constant_values=np.nan)
 eigen_cen_bg_avg_smooth_z_pad = np.pad(eigen_cen_bg_avg_smooth_z, (0,10), mode='constant', constant_values=np.nan)
 eigen_cen_cb_avg_smooth_z_pad = np.pad(eigen_cen_cb_avg_smooth_z, (0,10), mode='constant', constant_values=np.nan)
@@ -153,6 +155,9 @@ eigen_cen_cb_avg_smooth_z_pad = np.pad(eigen_cen_cb_avg_smooth_z, (0,10), mode='
 mod_cort_avg_blocks = np.nanmean(np.array(list(map(lambda i : q_avg_smooth_z_cort_pad[int(i[0]):int(i[1])+1], group_blocks))), axis=0)
 eigen_bg_avg_blocks = np.nanmean(np.array(list(map(lambda i : eigen_cen_bg_avg_smooth_z_pad[int(i[0]):int(i[1])+1], group_blocks))), axis=0)
 eigen_cb_avg_blocks = np.nanmean(np.array(list(map(lambda i : eigen_cen_cb_avg_smooth_z_pad[int(i[0]):int(i[1])+1], group_blocks))), axis=0)
+
+## average blocks, all subjects
+
 
 ## plotting
 fig, ax = plt.subplots()
@@ -186,8 +191,9 @@ plt.axvspan(con_block_frames[0][0], con_block_frames[0][1], facecolor=p_dict['Co
 
 plt.legend(handles=[inc_patch_cb, con_patch_cb, cort_line_mod_eig_less, bg_line_eig, cb_line_eig], prop={'size':6.5}, loc=1)
 plt.tight_layout()
-plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_avg_blocks_cb_z.png', dpi=300)
-plt.show()
+# plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_avg_blocks_cb_z.png', dpi=300)
+# plt.show()
+plt.close()
 
 
 #### AVERAGE BLOCKS - with error - eigen cb bg, mod cort
@@ -237,10 +243,8 @@ plt.axvspan(con_block_frames[0][0], con_block_frames[0][1], facecolor=p_dict['Co
 
 plt.legend(handles=[inc_patch_cb, con_patch_cb, cort_line_mod_eig_less, bg_line_eig, cb_line_eig], prop={'size':6.5}, loc=1)
 plt.tight_layout()
-plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_avg_blocks_cb_z_yerr_std.png', dpi=2000)
+# plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_avg_blocks_cb_z_yerr_std.png', dpi=2000)
 plt.show()
-
-sys.exit()
 
 
 ## plot eigenvec cen from cb, bg -- with modularity of cort -- MORE SMOOTH
@@ -262,8 +266,9 @@ for i in range(len(inc_block)):
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35)
 plt.legend(handles=[inc_patch, con_patch, cort_line_mod_eig, bg_line_eig_lbl, cb_line_eig_lbl], prop={'size':7.5}, loc=1)
 plt.tight_layout()
-plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_blocks_cc_z.png', dpi=300)
-plt.show()
+# plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_blocks_cc_z.png', dpi=300)
+# plt.show()
+plt.close()
 
 # ALL IN ONE PLOT
 ## plot avg bg, cb connec -- with mod of cort
@@ -280,8 +285,9 @@ for i in range(len(inc_block)):
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent'], alpha=0.35)
 plt.legend(handles=[inc_patch, con_patch, cort_line_mod, cb_bg_line_connec], prop={'size':7.5}, loc=1)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/allsub_cort_mod_avg_cb_bg_con_smooth_sig1_blocks_cc_abs.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/allsub_cort_mod_avg_cb_bg_con_smooth_sig1_blocks_cc_abs.png', dpi=300)
+# plt.show()
+plt.close()
 
 
 ## POINTPLOT - mod cort, connec cb and bg
@@ -319,8 +325,9 @@ plt.xlabel('Task block', size=14, fontname='serif')
 plt.ylabel('Z-scored values', size=14, fontname='serif')
 plt.legend((inc_circ, con_circ), ('Incongruent', 'Congruent', 'Fixation'), numpoints=1)
 plt.tight_layout()
-plt.savefig('subjs_all_net_cort/allsub_cortnet_cort_mod_avg_cb_bg_smooth_sig1_pointplot_ci_cc.png', dpi=300)
-plt.show()
+# plt.savefig('subjs_all_net_cort/allsub_cortnet_cort_mod_avg_cb_bg_smooth_sig1_pointplot_ci_cc.png', dpi=300)
+# plt.show()
+plt.close()
 
 # maybe: coolwarm, twilight, twilight_shifted, BuPu, PuBu, Purples, YlGnBu, binary, cool, gist_gray, gist_yarg, pink, BuPu_r, PuOr_r, Purples_r, gist_gray_r, hot_r, pink_r, vlag_r
 # for i in list(plt.cm.cmap_d.keys()):
@@ -364,9 +371,9 @@ ax1.tick_params(labelsize=18)
 plt.suptitle('Stroop', size=30, fontname='serif')
 
 plt.tight_layout()
-plt.savefig('allsubs_hrf_rss_ax2_cbar_stroop.png', dpi=300)
-plt.show()
-
+# plt.savefig('allsubs_hrf_rss_ax2_cbar_stroop.png', dpi=300)
+# plt.show()
+plt.close()
 
 
 ## combine all timescale dataaframes
@@ -385,8 +392,6 @@ df_mlm_ts = pd.concat([df_mod_cort_ts, df_connec_cort_ts['connec_cort'], \
                     df_connec_thal_ts['connec_thal'], df_eigen_cb_ts['eigen_cb'], \
                        df_eigen_bg_ts['eigen_bg']], axis=1)
 
-
-
 conds_task = [(df_mlm_ts['frame'].isin(list(itertools.chain.from_iterable(inc_frames)))), \
             (df_mlm_ts['frame'].isin(list(itertools.chain.from_iterable(con_frames)))), \
             (df_mlm_ts['frame'].isin(list(itertools.chain.from_iterable(fix_frames))))]
@@ -402,7 +407,31 @@ vals_block = list(range(1,5))
 df_mlm_ts['block'] = np.select(conds_block, vals_block)
 
 df_mlm_ts.to_csv('cort_mod_cortbgcb_connec_eigen_ts.csv', index=False)
-# print(df_mlm_ts)
+
+## average task blocks
+df_mod_cort_ts_avg_blks = pd.read_csv('cort_mod_idx_reg_ts_avg_blks.csv')
+df_eigen_cb_ts_avg_blks = pd.read_csv('cb_eigenvec_cen_ts_avg_blks.csv')
+df_eigen_bg_ts_avg_blks = pd.read_csv('bg_eigenvec_cen_ts_avg_blks.csv')
+
+df_mlm_ts_avg_blks = pd.concat([df_mod_cort_ts_avg_blks, df_eigen_cb_ts_avg_blks['eigen_cb'], \
+                       df_eigen_bg_ts_avg_blks['eigen_bg']], axis=1)
+
+conds_task = [(df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(inc_frames)))), \
+            (df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(con_frames)))), \
+            (df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(fix_frames))))]
+vals_task = ['Incongruent', 'Congruent', 'Fixation']
+df_mlm_ts_avg_blks['task'] = np.select(conds_task, vals_task)
+df_mlm_ts_avg_blks = df_mlm_ts_avg_blks[df_mlm_ts_avg_blks['task'] != 'Fixation']
+
+conds_block = [(df_mlm_ts_avg_blks['frame'].isin(inc_frames[0]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[0])), \
+                (df_mlm_ts_avg_blks['frame'].isin(inc_frames[1]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[1])), \
+               (df_mlm_ts_avg_blks['frame'].isin(inc_frames[2]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[2])), \
+               (df_mlm_ts_avg_blks['frame'].isin(inc_frames[3]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[3]))]
+vals_block = list(range(1,5))
+df_mlm_ts_avg_blks['block'] = np.select(conds_block, vals_block)
+
+df_mlm_ts_avg_blks.to_csv('cort_mod_bgcb_eigen_ts_avg_blks.csv', index=False)
+# sys.exit()
 
 # create lag and lead df
 df_mlm_ts_shift = df_mlm_ts
@@ -450,11 +479,12 @@ ax[1].set_ylabel('lead coefficients')
 ax[0].set_ylabel('lag coefficients')
 ax[0].legend()
 ax[1].legend()
-plt.show()
+# plt.show()
+plt.close()
 
 # save matrix at each tr for one subject
 efc_mat = jr.get_efc_trans_sing(opj(main_dir, d_path), 'stroop', subj_lst[0])
-for i in range(len(efc_mat)+1):
+for i in range(len(efc_mat)):
     # plot inc corr matrix
     fig, ax = plt.subplots(1, 1)
     coll = ax.imshow(efc_mat[i], vmin=-1, vmax=1, cmap='viridis')  # cmap=plt.cm.RdYlBu_r
@@ -467,3 +497,64 @@ for i in range(len(efc_mat)+1):
         pass
     # plt.savefig(f'tr_mats/tr_mat_{str(i).zfill(3)}.png', dpi=300)
     plt.close()
+
+
+## CROSS CORRELATION
+# bg x cb
+cross_corr = signal.correlate(eigen_bg_avg_blocks, eigen_cb_avg_blocks)
+lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
+cross_corr /= np.max(cross_corr)
+
+cross_corr_srt = sorted(list(enumerate(cross_corr)), key=lambda i:i[1], reverse=True)
+lead = lags[cross_corr_srt[0][0]]
+lag = lags[cross_corr_srt[1][0]]
+print(f'lead: {lead} ', f'lag: {lag} ')
+
+plt.plot(lags, cross_corr)
+plt.xlabel('Lags')
+plt.ylabel('Correlation')
+plt.show()
+
+# mod x cb
+cross_corr = signal.correlate(mod_cort_avg_blocks, eigen_cb_avg_blocks)
+lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
+cross_corr /= np.max(cross_corr)
+
+cross_corr_srt = sorted(list(enumerate(cross_corr)), key=lambda i:i[1], reverse=True)
+lead = lags[cross_corr_srt[0][0]]
+lag = lags[cross_corr_srt[1][0]]
+print(f'lead: {lead} ', f'lag: {lag} ')
+
+plt.plot(lags, cross_corr)
+plt.xlabel('Lags')
+plt.ylabel('Correlation')
+plt.show()
+
+# mod x bg
+cross_corr = signal.correlate(mod_cort_avg_blocks, eigen_bg_avg_blocks)
+lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
+cross_corr /= np.max(cross_corr)
+
+cross_corr_srt = sorted(list(enumerate(cross_corr)), key=lambda i:i[1], reverse=True)
+lead = lags[cross_corr_srt[0][0]]
+lag = lags[cross_corr_srt[1][0]]
+print(f'lead: {lead} ', f'lag: {lag} ')
+
+plt.plot(lags, cross_corr)
+plt.xlabel('Lags')
+plt.ylabel('Correlation')
+plt.show()
+
+
+# create lag and lead df - average task blocks
+df_mlm_ts_avg_blks_shift = df_mlm_ts_avg_blks
+for i in list(range(-35,36)):
+    if i >= 0:
+        df_mlm_ts_avg_blks_shift[f'mod_idx_lag{i}'] = df_mlm_ts_avg_blks_shift['mod_idx'].shift(i)
+    elif i < 0:
+        df_mlm_ts_avg_blks_shift[f'mod_idx_lead{np.abs(i)}'] = df_mlm_ts_avg_blks_shift['mod_idx'].shift(i)
+df_mlm_ts_avg_blks_shift.to_csv('cort_mod_baba_eigen_ts_avg_blks_shift.csv', index=False)
+
+print(df_mlm_ts_avg_blks_shift)
+print(df_mlm_ts_avg_blks_shift.columns.values[9:], len(df_mlm_ts_avg_blks_shift.columns.values[9:]))
+# sys.exit()
