@@ -18,10 +18,6 @@ import bct
 from config import *
 
 
-# np.set_printoptions(threshold=sys.maxsize)
-pd.set_option('display.max_rows', None)
-
-
 def node_info(region):
     """This function takes as input the desired region ('cort', 'cb', 'bg', 'thal'),
     returns the shen indices and the network each node is assigned to."""
@@ -654,16 +650,61 @@ def save_mod_idx_adj_cort(subj_lst, task, region):
             np.save(f'{out_name}{task}.npy', con_subj_lst)
         return
 
-def mat_adj_cort(efc_mat, reg_nodes, thres, cort_nodes=node_info('cort')[0]):
+def mat_adj_cort(efc_mat, reg_nodes, thres=0, cort_nodes=node_info('cort')[0]):
     """Takes a matrix as input and a set of region nodes and returns a
     matrix of that region nodes only with connections to cortex. thres=float between 0,1"""
-    adj_mat = list(map(lambda i: np.where(np.abs(i) > thres, 1, 0), efc_mat)) #0.2, 0.6
-    adj_mat_reg = list(map(lambda i: i[reg_nodes], adj_mat))
-
-    cort_bool = list(map(lambda ii: list(map(lambda i: any(i[cort_nodes] == 1), ii)), adj_mat_reg))
-    nodes_cort_connec = list(map(lambda i: list(itertools.compress(reg_nodes, i)), cort_bool))
-
+    nodes_cort_connec = target_nodes(efc_mat, reg_nodes, thres, cort_nodes)
     efc_mat_lim = [list(map(lambda col: col[c_idx], frame[c_idx])) \
                    for frame, c_idx in zip(efc_mat, nodes_cort_connec)]
     efc_mat_lim = np.array(list(map(lambda x: np.array(x), efc_mat_lim)))
     return(efc_mat_lim)
+
+def target_nodes(efc_mat, reg_nodes, thres=0, cort_nodes=node_info('cort')[0]):
+    """Gets subcortical region nodes that are connected to cortex."""
+    adj_mat = list(map(lambda i: np.where(np.abs(i) > thres, 1, 0), efc_mat)) # 0.2, 0.6
+    adj_mat_reg = list(map(lambda i: i[reg_nodes], adj_mat))
+
+    cort_bool = list(map(lambda ii: list(map(lambda i: any(i[cort_nodes] == 1), ii)), adj_mat_reg))
+    nodes_cort_connec = list(map(lambda i: list(itertools.compress(reg_nodes, i)), cort_bool))
+    return(nodes_cort_connec)
+
+# print( node_info('cort')[0] )
+
+nodes = node_info('cb')[0]
+efc_mat = jr.get_efc_trans_sing(opj(main_dir, d_path), 'stroop', subj_lst[0])
+efc_mat_lim = mat_adj_cort(efc_mat, nodes, thres=0)
+
+def var_allsub(cort_mod, cb_eigen, bg_eigen, lag=1):
+    """this function takes cortical modularity, cb and bg eigen vector centrality
+    for all subjects. then implements vector autoregrssion and returns coefficients,
+    std error for each equation and overall correlations (respectively in output).
+    coeff and sterr order = mod, cb, bg per subject
+    corr = mod x cb, mod x bg, cb x bg per subject"""
+    coeff_lst = []
+    sterr_lst = []
+    corr_lst = []
+    for sub_mod, sub_cb, sub_bg in zip(cort_mod, cb_eigen, bg_eigen):
+        df_avg_blks = pd.DataFrame(sub_mod, columns=['mod_idx'])
+        df_avg_blks['eigen_cb'] = sub_cb
+        df_avg_blks['eigen_bg'] = sub_bg
+
+        model = VAR(df_avg_blks)
+        results = model.fit(lag) # maxlags=30, ic='aic', lag
+        # print(results.summary())
+        # print(results.k_ar) # lags used # results.plot_forecast(60) # plt.show()
+
+        # get VAR model output matrix
+        mdl_coeff_mat = results.params[1:]
+        mdl_sterr_mat = results.bse.values[1:]
+        mdl_corr_mat = results.resid_corr
+        # get output for each equation
+        mdl_coeff = np.diagonal(mdl_coeff_mat)
+        mdl_sterr = np.diagonal(mdl_sterr_mat)
+        mdl_corr = mdl_corr_mat[np.tril_indices(mdl_corr_mat.shape[0], k=-1)]
+        # append to lsts
+        coeff_lst.append(mdl_coeff)
+        sterr_lst.append(mdl_sterr)
+        corr_lst.append(mdl_corr)
+    return(np.array([coeff_lst, sterr_lst, corr_lst]))
+
+

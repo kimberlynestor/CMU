@@ -494,7 +494,7 @@ df_mlm_ts_melt.to_csv('cort_mod_idx_reg_ts.csv', index=False)
 ## average blocks
 df_mlm_ts_avg_blks = pd.DataFrame(mod_cort_avg_blocks_allsub)
 
-df_mlm_ts_avg_blks.columns +=1 # start column count from 1
+df_mlm_ts_avg_blks.columns +=5 # start column count from 5
 df_mlm_ts_avg_blks.insert(0, 'subj_ID', [int(i) for i in subj_lst])
 df_mlm_ts_avg_blks_melt = pd.melt(df_mlm_ts_avg_blks, id_vars=['subj_ID'], \
                                  var_name='frame', value_name='mod_idx')

@@ -122,7 +122,7 @@ eigen_cb_avg_blocks_allsub = np.array(list(map(lambda sub: np.nanmean(np.array(l
                                     axis=0), eigen_cen_cb_allsub_smooth_z_pad)))
 
 df_mlm_ts = pd.DataFrame(eigen_cb_avg_blocks_allsub)
-df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.columns +=5 # start column count from 1
 df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
 df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
                                  var_name='frame', value_name='eigen_cb')
@@ -142,13 +142,23 @@ eigen_cen_bg_allsub_smooth_z_pad = np.array(list(map(lambda sub:np.pad(sub, (0,1
 eigen_bg_avg_blocks_allsub = np.array(list(map(lambda sub: np.nanmean(np.array(list(\
                                 map(lambda i : sub[int(i[0]):int(i[1])+1], group_blocks))), \
                                     axis=0), eigen_cen_bg_allsub_smooth_z_pad)))
+"""
+for bg, cb in zip(eigen_bg_avg_blocks_allsub, eigen_cb_avg_blocks_allsub):
+    plt.plot(bg, label='eigen_bg', c='tab:blue')
+    plt.plot(cb, label='eigen_cb', c='tab:orange')
+    plt.axvline(x=35, c='k', alpha=0.5)
+    plt.axvline(x=40, c='k', alpha=0.5)
+    plt.legend()
+    plt.show()
+"""
 
 df_mlm_ts = pd.DataFrame(eigen_bg_avg_blocks_allsub)
-df_mlm_ts.columns +=1 # start column count from 1
+df_mlm_ts.columns +=5 # start column count from 1
 df_mlm_ts.insert(0, 'subj_ID', [int(i) for i in subj_lst])
 df_mlm_ts_melt = pd.melt(df_mlm_ts, id_vars=['subj_ID'], \
                                  var_name='frame', value_name='eigen_bg')
 df_mlm_ts_melt.to_csv('bg_eigenvec_cen_ts_avg_blks.csv', index=False)
+
 
 
 ## plot avg subj bg and cb eigenvector connectivity

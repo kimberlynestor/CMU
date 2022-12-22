@@ -23,6 +23,7 @@ dep_path = 'depend/'
 
 ## TASK BLOCK ONSET
 df_task_events = pd.read_csv(opj(main_dir, dep_path, 'task-stroop_events.tsv'), sep="\t")
+# print(df_task_events)
 
 # timing for inter task rest
 rest = df_task_events.iloc[0,0]
@@ -50,7 +51,8 @@ inc_lst = sum(inc_block, ())
 con_lst = list(np.array(sum(con_block, ()))+10)
 
 group_blocks = np.array(list(zip(inc_lst[::2], con_lst[1::2])))/2
-# indices for inc and con, fix
+
+# indices for inc and con, fix - minus 5 for average task blocks
 inc_block_frames = np.array(inc_block)/2
 inc_frames_idx = np.array(list(map(lambda i: list(range(int(i[0]), int(i[1]))), \
                                                         inc_block_frames))) -5
@@ -67,8 +69,9 @@ inc_frames = [list(range(int(i[0]), int(i[1])+1)) for i in inc_block_frames]
 con_frames = [list(range(int(i[0]), int(i[1])+1)) for i in con_block_frames]
 fix_frames = [list(range(int(i[0]), int(i[1])+1)) for i in fix_block_frames]
 
+# print(fix_block_frames)
 # print(inc_block_frames)
-# print(group_blocks)
+# print(inc_frames)
 
 #### HRF PREDICT
 # timepoints of image capture

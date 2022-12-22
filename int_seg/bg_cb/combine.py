@@ -16,6 +16,8 @@ from scipy.ndimage import gaussian_filter
 import scipy.stats as st
 from scipy import stats
 from scipy import signal
+from statsmodels.tsa.ar_model import AutoReg
+from sklearn.utils import resample
 
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
@@ -56,7 +58,9 @@ q_allsub_pad = np.array(list(map(lambda sub:np.pad(sub, (0,10), mode='constant',
                                                 constant_values=np.nan), q_allsub)))
 q_allsub_avg_blocks = np.array(list(map(lambda sub:np.nanmean(np.array(list(map(lambda i : \
                             sub[int(i[0]):int(i[1])+1], group_blocks))), axis=0), q_allsub_pad)))
-q_sterr_allpts = list(map(lambda i: st.sem(i), q_allsub_avg_blocks.T))
+q_allsub_avg_blocks_smooth = np.array(list(map(lambda i: gaussian_filter(i, sigma=1), q_allsub_avg_blocks)))
+q_allsub_avg_blocks_smooth_z = np.array(list(map(lambda i: stats.zscore(i), q_allsub_avg_blocks_smooth)))
+q_sterr_allpts = list(map(lambda i: st.sem(i), q_allsub_avg_blocks_smooth_z.T))
 
 eigen_cb_allsub = np.load(f'eigen_cen_cb_allsub_stroop.npy')
 eigen_cb_allsub_pad = np.array(list(map(lambda sub:np.pad(sub, (0,10), mode='constant', \
@@ -157,8 +161,6 @@ eigen_bg_avg_blocks = np.nanmean(np.array(list(map(lambda i : eigen_cen_bg_avg_s
 eigen_cb_avg_blocks = np.nanmean(np.array(list(map(lambda i : eigen_cen_cb_avg_smooth_z_pad[int(i[0]):int(i[1])+1], group_blocks))), axis=0)
 
 ## average blocks, all subjects
-
-
 ## plotting
 fig, ax = plt.subplots()
 plt.axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(5, 7))
@@ -408,29 +410,7 @@ df_mlm_ts['block'] = np.select(conds_block, vals_block)
 
 df_mlm_ts.to_csv('cort_mod_cortbgcb_connec_eigen_ts.csv', index=False)
 
-## average task blocks
-df_mod_cort_ts_avg_blks = pd.read_csv('cort_mod_idx_reg_ts_avg_blks.csv')
-df_eigen_cb_ts_avg_blks = pd.read_csv('cb_eigenvec_cen_ts_avg_blks.csv')
-df_eigen_bg_ts_avg_blks = pd.read_csv('bg_eigenvec_cen_ts_avg_blks.csv')
-
-df_mlm_ts_avg_blks = pd.concat([df_mod_cort_ts_avg_blks, df_eigen_cb_ts_avg_blks['eigen_cb'], \
-                       df_eigen_bg_ts_avg_blks['eigen_bg']], axis=1)
-
-conds_task = [(df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(inc_frames)))), \
-            (df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(con_frames)))), \
-            (df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(fix_frames))))]
-vals_task = ['Incongruent', 'Congruent', 'Fixation']
-df_mlm_ts_avg_blks['task'] = np.select(conds_task, vals_task)
-df_mlm_ts_avg_blks = df_mlm_ts_avg_blks[df_mlm_ts_avg_blks['task'] != 'Fixation']
-
-conds_block = [(df_mlm_ts_avg_blks['frame'].isin(inc_frames[0]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[0])), \
-                (df_mlm_ts_avg_blks['frame'].isin(inc_frames[1]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[1])), \
-               (df_mlm_ts_avg_blks['frame'].isin(inc_frames[2]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[2])), \
-               (df_mlm_ts_avg_blks['frame'].isin(inc_frames[3]) | df_mlm_ts_avg_blks['frame'].isin(con_frames[3]))]
-vals_block = list(range(1,5))
-df_mlm_ts_avg_blks['block'] = np.select(conds_block, vals_block)
-
-df_mlm_ts_avg_blks.to_csv('cort_mod_bgcb_eigen_ts_avg_blks.csv', index=False)
+# print(df_mlm_ts[['mod_idx']].values.shape)
 # sys.exit()
 
 # create lag and lead df
@@ -442,11 +422,8 @@ for i in list(range(-6,6)):
         df_mlm_ts_shift[f'mod_idx_lead{np.abs(i)}'] = df_mlm_ts_shift['mod_idx'].shift(i)
 df_mlm_ts_shift.to_csv('cort_mod_cortbgcb_connec_eigen_ts_shift.csv', index=False)
 
-# print(df_mlm_ts_shift)
-# sys.exit()
 
 # examine lag shift for connectivity and modularity
-from statsmodels.tsa.ar_model import AutoReg
 ar_model = AutoReg(df_mlm_ts['mod_idx'], exog=df_mlm_ts[['connec_thal', 'frame', 'inc_reg', 'con_reg']], lags=5).fit()
 print(ar_model.summary())
 
@@ -499,6 +476,50 @@ for i in range(len(efc_mat)):
     plt.close()
 
 
+
+## average task blocks
+df_mod_cort_ts_avg_blks = pd.read_csv('cort_mod_idx_reg_ts_avg_blks.csv')
+df_eigen_cb_ts_avg_blks = pd.read_csv('cb_eigenvec_cen_ts_avg_blks.csv')
+df_eigen_bg_ts_avg_blks = pd.read_csv('bg_eigenvec_cen_ts_avg_blks.csv')
+
+df_mlm_ts_avg_blks = pd.concat([df_mod_cort_ts_avg_blks, df_eigen_cb_ts_avg_blks['eigen_cb'], \
+                       df_eigen_bg_ts_avg_blks['eigen_bg']], axis=1)
+
+
+from statsmodels.tsa.api import VAR
+from sklearn.mixture import GaussianMixture
+import impyute as impy
+
+
+
+
+print(var_allsub(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))
+sys.exit()
+
+x = np.array(list(map(lambda i:np.pad(i, (0,1), mode='constant', constant_values=np.nan), np.array([mdl_coeff, mdl_sterr, mdl_corr]))))
+
+em_lst = []
+for i in range(1000):
+    em = impy.em(x.T, loops=1000)
+    em_lst.append(em[-1])
+
+stab_em = np.mean(np.array(em_lst), axis=0)
+
+
+
+sys.exit()
+
+
+
+conds_task = [(df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(inc_frames)))), \
+            (df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(con_frames)))), \
+            (df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(fix_frames))))]
+vals_task = ['Incongruent', 'Congruent', 'Fixation']
+df_mlm_ts_avg_blks['task'] = np.select(conds_task, vals_task)
+# df_mlm_ts_avg_blks = df_mlm_ts_avg_blks[df_mlm_ts_avg_blks['task'] != 'Fixation']
+df_mlm_ts_avg_blks.to_csv('cort_mod_bgcb_eigen_ts_avg_blks.csv', index=False)
+
+
 ## CROSS CORRELATION
 # bg x cb
 cross_corr = signal.correlate(eigen_bg_avg_blocks, eigen_cb_avg_blocks)
@@ -510,40 +531,70 @@ lead = lags[cross_corr_srt[0][0]]
 lag = lags[cross_corr_srt[1][0]]
 print(f'lead: {lead} ', f'lag: {lag} ')
 
+# regular no CI
 plt.plot(lags, cross_corr)
 plt.xlabel('Lags')
 plt.ylabel('Correlation')
 plt.show()
+
+# get bootstrap CI for cross correlation
+bs_lst = []
+for i in range(1000):
+    cross_corr_bs = resample(cross_corr, replace=True)
+    # print(cross_corr_bs)
+    bs_lst.append(cross_corr_bs)
+
+cross_corr_bs_sterr = list(map(lambda i: st.sem(i), np.array(bs_lst).T))
+cross_corr_bs_std = list(map(lambda i: np.std(i), np.array(bs_lst).T))
+
+# bootstrap CI
+plt.errorbar(lags, cross_corr, yerr=cross_corr_bs_std)
+plt.xlabel('Lags')
+plt.ylabel('Correlation')
+plt.title('Bootstrap epoch=1000 errorbars std')
+plt.show()
+
 
 # mod x cb
-cross_corr = signal.correlate(mod_cort_avg_blocks, eigen_cb_avg_blocks)
+cross_corr_cb = signal.correlate(mod_cort_avg_blocks, eigen_cb_avg_blocks)
 lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
-cross_corr /= np.max(cross_corr)
+cross_corr_cb /= np.max(cross_corr_cb)
 
-cross_corr_srt = sorted(list(enumerate(cross_corr)), key=lambda i:i[1], reverse=True)
+cross_corr_srt = sorted(list(enumerate(cross_corr_cb)), key=lambda i:i[1], reverse=True)
 lead = lags[cross_corr_srt[0][0]]
 lag = lags[cross_corr_srt[1][0]]
 print(f'lead: {lead} ', f'lag: {lag} ')
 
-plt.plot(lags, cross_corr)
+plt.plot(lags, cross_corr_cb)
 plt.xlabel('Lags')
 plt.ylabel('Correlation')
-plt.show()
+# plt.show()
+plt.close()
 
 # mod x bg
-cross_corr = signal.correlate(mod_cort_avg_blocks, eigen_bg_avg_blocks)
+cross_corr_bg = signal.correlate(mod_cort_avg_blocks, eigen_bg_avg_blocks)
 lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
-cross_corr /= np.max(cross_corr)
+cross_corr_bg /= np.max(cross_corr_bg)
 
-cross_corr_srt = sorted(list(enumerate(cross_corr)), key=lambda i:i[1], reverse=True)
+cross_corr_srt = sorted(list(enumerate(cross_corr_bg)), key=lambda i:i[1], reverse=True)
 lead = lags[cross_corr_srt[0][0]]
 lag = lags[cross_corr_srt[1][0]]
 print(f'lead: {lead} ', f'lag: {lag} ')
 
-plt.plot(lags, cross_corr)
+plt.plot(lags, cross_corr_bg)
 plt.xlabel('Lags')
 plt.ylabel('Correlation')
-plt.show()
+# plt.show()
+plt.close()
+
+# plot modxbg and modxcb cross corr together
+plt.plot(lags, cross_corr_bg, label='cross_corr_bg')
+plt.plot(lags, cross_corr_cb, label='cross_corr_cb')
+plt.xlabel('Lags')
+plt.ylabel('Correlation')
+plt.legend()
+# plt.show()
+plt.close()
 
 
 # create lag and lead df - average task blocks
@@ -555,6 +606,6 @@ for i in list(range(-35,36)):
         df_mlm_ts_avg_blks_shift[f'mod_idx_lead{np.abs(i)}'] = df_mlm_ts_avg_blks_shift['mod_idx'].shift(i)
 df_mlm_ts_avg_blks_shift.to_csv('cort_mod_baba_eigen_ts_avg_blks_shift.csv', index=False)
 
-print(df_mlm_ts_avg_blks_shift)
-print(df_mlm_ts_avg_blks_shift.columns.values[9:], len(df_mlm_ts_avg_blks_shift.columns.values[9:]))
+# print(df_mlm_ts_avg_blks_shift)
+# print(df_mlm_ts_avg_blks_shift.columns.values[9:], len(df_mlm_ts_avg_blks_shift.columns.values[9:]))
 # sys.exit()

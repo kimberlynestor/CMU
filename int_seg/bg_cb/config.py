@@ -39,6 +39,8 @@ p_dict = {'Incongruent_cb':'#ff0080', 'Congruent_cb':'#0080ff', \
 # cc_yellow: #f9ffb8, cc_green: #b8ffbe, cc_salmon: #ffcbcb, burnt_orange: #cc5500, #964000
 # 'Incongruent.cb':'#bd1250', 'Congruent.cb':'#0166a0'
 
+# p_dict_cb = {'Incongruent':'#ff3098', 'Congruent':'#1b8bfa', 'inc':'#b0b0b0', 'con':'#808080'}
+p_dict_cb = {'Incongruent':'#ff0080', 'Congruent':'#0080ff', 'inc':'#b0b0b0', 'con':'#808080'} # super bright
 
 # legend patches
 inc_patch = mpatches.Patch(color=p_dict['Incongruent'], label='Incongruent', alpha=0.7) # 0.35
@@ -69,6 +71,11 @@ con_circ = Line2D(range(1), range(1), color='white', marker='o', markersize=11, 
                    markerfacecolor=p_dict['Congruent'])
 fix_circ = Line2D(range(1), range(1), color='white', marker='o', markersize=11, \
                    markerfacecolor=p_dict['Fixation'])
+
+inc_circ_cb = Line2D(range(1), range(1), color='white', marker='o', markersize=11, \
+                   markerfacecolor=p_dict['Incongruent_cb'])
+con_circ_cb = Line2D(range(1), range(1), color='white', marker='o', markersize=11, \
+                   markerfacecolor=p_dict['Congruent_cb'])
 
 
 cb_line_eig = Line2D([0], [0], c=p_dict['cb_line_eig'], lw=2, label='Cerebellum', ls='-', alpha=0.8)
