@@ -12,6 +12,9 @@ import itertools
 import numpy as np
 import pandas as pd
 
+from statsmodels.tsa.api import VAR
+import impyute as impy
+
 import jr_funcs as jr
 import bct
 
@@ -678,7 +681,9 @@ def var_allsub(cort_mod, cb_eigen, bg_eigen, lag=1):
     """this function takes cortical modularity, cb and bg eigen vector centrality
     for all subjects. then implements vector autoregrssion and returns coefficients,
     std error for each equation and overall correlations (respectively in output).
-    coeff and sterr order = mod, cb, bg per subject
+    returns:
+    coeff = mod, cb, bg per subject
+    sterr = mod, cb, bg per subject
     corr = mod x cb, mod x bg, cb x bg per subject"""
     coeff_lst = []
     sterr_lst = []
@@ -690,12 +695,12 @@ def var_allsub(cort_mod, cb_eigen, bg_eigen, lag=1):
 
         model = VAR(df_avg_blks)
         results = model.fit(lag) # maxlags=30, ic='aic', lag
-        # print(results.summary())
+
         # print(results.k_ar) # lags used # results.plot_forecast(60) # plt.show()
 
         # get VAR model output matrix
-        mdl_coeff_mat = results.params[1:]
-        mdl_sterr_mat = results.bse.values[1:]
+        mdl_coeff_mat = results.params.iloc[-3:,]   #[1:]
+        mdl_sterr_mat = results.bse.iloc[-3:,]   #[1:] .values
         mdl_corr_mat = results.resid_corr
         # get output for each equation
         mdl_coeff = np.diagonal(mdl_coeff_mat)
@@ -707,4 +712,134 @@ def var_allsub(cort_mod, cb_eigen, bg_eigen, lag=1):
         corr_lst.append(mdl_corr)
     return(np.array([coeff_lst, sterr_lst, corr_lst]))
 
+
+def var_allsub_bug(cort_mod, cb_eigen, bg_eigen, lag=1):
+    """this function takes cortical modularity, cb and bg eigen vector centrality
+    for all subjects. then implements vector autoregrssion and returns coefficients,
+    std error for each equation and overall correlations (respectively in output).
+    returns:
+    coeff = mod, cb, bg per subject
+    sterr = mod, cb, bg per subject
+    corr = mod x cb, mod x bg, cb x bg per subject"""
+
+    if lag == 1:
+        coeff_lst = []
+        sterr_lst = []
+        corr_lst = []
+        for sub_mod, sub_cb, sub_bg in zip(cort_mod, cb_eigen, bg_eigen):
+            df_avg_blks = pd.DataFrame(sub_mod, columns=['mod_idx'])
+            df_avg_blks['eigen_cb'] = sub_cb
+            df_avg_blks['eigen_bg'] = sub_bg
+
+            model = VAR(df_avg_blks)
+            results = model.fit(lag) # maxlags=30, ic='aic', lag
+            # print(results.summary())
+            # print(results.k_ar) # lags used # results.plot_forecast(60) # plt.show()
+
+            # get VAR model output matrix
+            mdl_coeff_mat = results.params.iloc[-3:,]   #[1:]
+            mdl_sterr_mat = results.bse.iloc[-3:,]   #[1:] .values
+            mdl_corr_mat = results.resid_corr
+            # get output for each equation
+            mdl_coeff = np.diagonal(mdl_coeff_mat)
+            mdl_sterr = np.diagonal(mdl_sterr_mat)
+            mdl_corr = mdl_corr_mat[np.tril_indices(mdl_corr_mat.shape[0], k=-1)]
+            # append to lsts
+            coeff_lst.append(mdl_coeff)
+            sterr_lst.append(mdl_sterr)
+            corr_lst.append(mdl_corr)
+        return(np.array([coeff_lst, sterr_lst, corr_lst]))
+    else:
+        ALLSUB_LAG_DICT = {}
+        for sub_mod, sub_cb, sub_bg, sub_id in zip(cort_mod, cb_eigen, bg_eigen, subj_lst):
+            # make nested dict
+            ALLSUB_LAG_DICT[int(sub_id)] = {}
+            # make mode df
+            df_avg_blks = pd.DataFrame(sub_mod, columns=['mod_idx'])
+            df_avg_blks['eigen_cb'] = sub_cb
+            df_avg_blks['eigen_bg'] = sub_bg
+            df_avg_blks.index = df_avg_blks.index+1
+            # print(df_avg_blks)
+            # break
+
+            # run VAR model
+            model = VAR(df_avg_blks)
+            results = model.fit(26)
+            print(results.summary())
+            break
+
+            # get VAR model output matrix
+            mdl_coeff_mat = results.params.iloc[1:, ]
+            mdl_sterr_mat = results.bse.iloc[1:, ]
+            mdl_corr_mat = results.resid_corr
+            mdl_corr = mdl_corr_mat[np.tril_indices(mdl_corr_mat.shape[0], k=-1)]
+            # loop to separate each lag and add to lag dict
+            s1, s2 = 0, 3
+            for lg in range(1, lag+1):
+                # get output for each equation
+                mdl_coeff = np.diagonal(mdl_coeff_mat[s1:s2])
+                mdl_sterr = np.diagonal(mdl_sterr_mat[s1:s2])
+                print(int(sub_id), lg, mdl_sterr)
+                # add to nested dict
+                ALLSUB_LAG_DICT[int(sub_id)][f'lag{lg}'] = np.array([mdl_coeff, mdl_sterr, mdl_corr])
+                s1 += 3
+                s2 += 3
+        return (ALLSUB_LAG_DICT)
+
+
+def var_allsub_nomod(cb_eigen, bg_eigen, lag=1):
+    """this function takes cortical modularity, cb and bg eigen vector centrality
+    for all subjects. then implements vector autoregrssion and returns coefficients,
+    std error for each equation and overall correlations (respectively in output).
+    returns:
+    coeff = cb, bg per subject
+    sterr = cb, bg per subject
+    corr = cb x bg per subject"""
+    coeff_lst = []
+    sterr_lst = []
+    corr_lst = []
+    for sub_cb, sub_bg in zip(cb_eigen, bg_eigen):
+        df_avg_blks = pd.DataFrame(sub_cb, columns=['eigen_cb'])
+        df_avg_blks['eigen_bg'] = sub_bg
+
+
+        model = VAR(df_avg_blks)
+        results = model.fit(lag)
+
+        # get VAR model output matrix
+        mdl_coeff_mat = results.params.iloc[-2:,]
+        mdl_sterr_mat = results.bse.iloc[-2:,]
+        mdl_corr_mat = results.resid_corr
+        # get output for each equation
+        mdl_coeff = np.diagonal(mdl_coeff_mat)
+        mdl_sterr = np.diagonal(mdl_sterr_mat)
+        mdl_corr = mdl_corr_mat[np.tril_indices(mdl_corr_mat.shape[0], k=-1)]
+        # append to lsts
+        coeff_lst.append(mdl_coeff)
+        sterr_lst.append(np.array(mdl_sterr))
+        corr_lst.append(np.pad(mdl_corr, (0,1), mode='edge'))
+
+    return(np.array([coeff_lst, sterr_lst, corr_lst])) # , dtype=object
+
+
+def impy_params(param_lst, imp_num=1, epoch=10000):
+    """this function takes a list of params for all subjects from var_allsub.
+    does imputation using EM algorithm over 1000 epochs to stabilise and
+    returns single value params representative of the subjects set."""
+    impy_mdl_param = []
+    for ii in range(len(param_lst)):
+        # set param for imputation and fill with nan
+        param = param_lst[ii]
+
+        fill_nan = np.array(list(map(lambda i: np.pad(i, (0, imp_num), \
+                            mode='constant', constant_values=np.nan), param.T)))
+
+        # perform EM on imputations to stabilise
+        em_lst = []
+        for i in range(epoch):
+            em = impy.em(fill_nan.T, loops=1000)
+            em_lst.append(em[-imp_num])
+        stab_em = np.mean(np.array(em_lst), axis=0)
+        impy_mdl_param.append(stab_em)
+    return (np.array(impy_mdl_param))
 
