@@ -682,7 +682,7 @@ print('\nVAR lag30:\n', impy_params(var_allsub_lag30))
 
 # get var lags for each subject, do impyutation for sample statistics, save
 
-coeff_lags_lst = []
+"""coeff_lags_lst = []
 stderr_lags_lst = []
 corr_lags_lst = []
 std_lags_lst = []
@@ -702,9 +702,8 @@ for i in range(1,36):
 np.save(f'var_coeff_lags35.npy', coeff_lags_lst)
 np.save(f'var_stderr_lags35.npy', stderr_lags_lst)
 np.save(f'var_corr_lags35.npy', corr_lags_lst)
-np.save(f'var_corr_std_lags35.npy', std_lags_lst)
+np.save(f'var_corr_std_lags35.npy', std_lags_lst)"""
 
-sys.exit()
 
 var_coeff_lags35 = np.load('var_coeff_lags35.npy')
 var_corr_lags35 = np.load('var_corr_lags35.npy')
