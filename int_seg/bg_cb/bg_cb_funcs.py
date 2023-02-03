@@ -5,6 +5,7 @@
 
 from os.path import join as opj
 import os
+import sys
 
 from csv import writer
 import itertools
@@ -695,17 +696,19 @@ def var_allsub(cort_mod, cb_eigen, bg_eigen, lag=1):
 
         model = VAR(df_avg_blks)
         results = model.fit(lag) # maxlags=30, ic='aic', lag
-
+        # print(results.summary())
         # print(results.k_ar) # lags used # results.plot_forecast(60) # plt.show()
 
         # get VAR model output matrix
-        mdl_coeff_mat = results.params.iloc[-3:,]   #[1:]
-        mdl_sterr_mat = results.bse.iloc[-3:,]   #[1:] .values
+        mdl_coeff_mat = results.params.values[-3:]
+        mdl_sterr_mat = results.bse.values[-3:]
         mdl_corr_mat = results.resid_corr
+
         # get output for each equation
         mdl_coeff = np.diagonal(mdl_coeff_mat)
         mdl_sterr = np.diagonal(mdl_sterr_mat)
         mdl_corr = mdl_corr_mat[np.tril_indices(mdl_corr_mat.shape[0], k=-1)]
+
         # append to lsts
         coeff_lst.append(mdl_coeff)
         sterr_lst.append(mdl_sterr)
@@ -713,7 +716,7 @@ def var_allsub(cort_mod, cb_eigen, bg_eigen, lag=1):
     return(np.array([coeff_lst, sterr_lst, corr_lst]))
 
 
-def var_allsub_bug(cort_mod, cb_eigen, bg_eigen, lag=1):
+def var_allsub_lags(cort_mod, cb_eigen, bg_eigen, lag=1):
     """this function takes cortical modularity, cb and bg eigen vector centrality
     for all subjects. then implements vector autoregrssion and returns coefficients,
     std error for each equation and overall correlations (respectively in output).

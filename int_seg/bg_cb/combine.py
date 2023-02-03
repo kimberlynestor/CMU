@@ -202,7 +202,7 @@ plt.close()
 fig, ax = plt.subplots()
 plt.axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(5, 7))
 
-ax.plot(np.arange(group_blocks[0][0], group_blocks[0][1]+1), gaussian_filter(mod_cort_avg_blocks, sigma=1), lw=1.5, c=p_dict['cort_line_cb'], ls=':')
+ax.plot(np.arange(group_blocks[0][0], group_blocks[0][1]+1), gaussian_filter(mod_cort_avg_blocks, sigma=1), lw=3, c=p_dict['cort_line_cb'], ls=':')
 ax.set_xlabel('Frames (TR)', size=12, fontname='serif')
 # ax.set_ylim(-2, 2.75) #sem
 ax.set_ylim(-3, 4.5)
@@ -245,7 +245,7 @@ plt.axvspan(con_block_frames[0][0], con_block_frames[0][1], facecolor=p_dict['Co
 
 plt.legend(handles=[inc_patch_cb, con_patch_cb, cort_line_mod_eig_less, bg_line_eig, cb_line_eig], prop={'size':6.5}, loc=1)
 plt.tight_layout()
-# plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_avg_blocks_cb_z_yerr_std.png', dpi=2000)
+plt.savefig('eigenvec_cen_bg_cb_mod_cort_smooth_sig2_avg_blocks_cb_z_yerr_std.png', dpi=2000)
 plt.show()
 
 
@@ -476,7 +476,6 @@ for i in range(len(efc_mat)):
     plt.close()
 
 
-
 ## average task blocks
 df_mod_cort_ts_avg_blks = pd.read_csv('cort_mod_idx_reg_ts_avg_blks.csv')
 df_eigen_cb_ts_avg_blks = pd.read_csv('cb_eigenvec_cen_ts_avg_blks.csv')
@@ -484,32 +483,6 @@ df_eigen_bg_ts_avg_blks = pd.read_csv('bg_eigenvec_cen_ts_avg_blks.csv')
 
 df_mlm_ts_avg_blks = pd.concat([df_mod_cort_ts_avg_blks, df_eigen_cb_ts_avg_blks['eigen_cb'], \
                        df_eigen_bg_ts_avg_blks['eigen_bg']], axis=1)
-
-
-from statsmodels.tsa.api import VAR
-from sklearn.mixture import GaussianMixture
-import impyute as impy
-
-
-
-
-print(var_allsub(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))
-sys.exit()
-
-x = np.array(list(map(lambda i:np.pad(i, (0,1), mode='constant', constant_values=np.nan), np.array([mdl_coeff, mdl_sterr, mdl_corr]))))
-
-em_lst = []
-for i in range(1000):
-    em = impy.em(x.T, loops=1000)
-    em_lst.append(em[-1])
-
-stab_em = np.mean(np.array(em_lst), axis=0)
-
-
-
-sys.exit()
-
-
 
 conds_task = [(df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(inc_frames)))), \
             (df_mlm_ts_avg_blks['frame'].isin(list(itertools.chain.from_iterable(con_frames)))), \
@@ -520,22 +493,75 @@ df_mlm_ts_avg_blks['task'] = np.select(conds_task, vals_task)
 df_mlm_ts_avg_blks.to_csv('cort_mod_bgcb_eigen_ts_avg_blks.csv', index=False)
 
 
-## CROSS CORRELATION
+## CROSS CORRELATION - AVERAGE
+fig, ax = plt.subplots(3,1, figsize=(7,7), sharex=True)
+
+# mod x cb
+cross_corr_cb = signal.correlate(mod_cort_avg_blocks, eigen_cb_avg_blocks)
+# cross_corr_cb = np.correlate(mod_cort_avg_blocks, eigen_cb_avg_blocks, mode='full') / \
+#                 (np.std(mod_cort_avg_blocks)*np.std(eigen_cb_avg_blocks))
+lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
+cross_corr_cb /= np.max(cross_corr_cb)
+cross_corr_srt = sorted(list(enumerate(cross_corr_cb)), key=lambda i:i[1], reverse=True)
+lead = lags[cross_corr_srt[0][0]]
+lag = lags[cross_corr_srt[1][0]]
+# print(f'lead: {lead} ', f'lag: {lag} ')
+
+# cross covariance not correlation, divide by output of cross corr by (every lag) prod of std x and y std of both vars at lag 0, subject wise
+
+# plot
+ax[0].plot(lags, cross_corr_cb)
+ax[0].set_title('Cortex & Cb')
+ax[0].set_ylim(-1.7, 1.3)
+ax[0].set_yticks(np.arange(-1, 1.1))
+
+
+# mod x bg
+cross_corr_bg = signal.correlate(mod_cort_avg_blocks, eigen_bg_avg_blocks)
+lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
+cross_corr_bg /= np.max(cross_corr_bg)
+cross_corr_srt = sorted(list(enumerate(cross_corr_bg)), key=lambda i:i[1], reverse=True)
+lead = lags[cross_corr_srt[0][0]]
+lag = lags[cross_corr_srt[1][0]]
+# print(f'lead: {lead} ', f'lag: {lag} ')
+
+# plot
+ax[1].plot(lags, cross_corr_bg)
+ax[1].set_title('Cortex & Bg')
+ax[1].set_ylim(-1.7, 1.3)
+ax[1].set_yticks(np.arange(-1, 1.1))
+
 # bg x cb
 cross_corr = signal.correlate(eigen_bg_avg_blocks, eigen_cb_avg_blocks)
 lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
 cross_corr /= np.max(cross_corr)
-
 cross_corr_srt = sorted(list(enumerate(cross_corr)), key=lambda i:i[1], reverse=True)
 lead = lags[cross_corr_srt[0][0]]
 lag = lags[cross_corr_srt[1][0]]
-print(f'lead: {lead} ', f'lag: {lag} ')
+# print(f'lead: {lead} ', f'lag: {lag} ')
 
-# regular no CI
-plt.plot(lags, cross_corr)
+# plot  - regular no CI
+ax[2].plot(lags, cross_corr)
+ax[2].set_title('Cb & Bg')
+ax[2].set_ylim(-1.7, 1.3)
+ax[2].set_yticks(np.arange(-1, 1.1))
+
+plt.xlabel('Lags')
+fig.supylabel('Correlation')
+plt.tight_layout()
+# plt.show()
+plt.close()
+
+
+"""
+# plot modxbg and modxcb cross corr together
+plt.plot(lags, cross_corr_bg, label='cross_corr_bg')
+plt.plot(lags, cross_corr_cb, label='cross_corr_cb')
 plt.xlabel('Lags')
 plt.ylabel('Correlation')
-plt.show()
+plt.legend()
+# plt.show()
+plt.close()
 
 # get bootstrap CI for cross correlation
 bs_lst = []
@@ -553,48 +579,7 @@ plt.xlabel('Lags')
 plt.ylabel('Correlation')
 plt.title('Bootstrap epoch=1000 errorbars std')
 plt.show()
-
-
-# mod x cb
-cross_corr_cb = signal.correlate(mod_cort_avg_blocks, eigen_cb_avg_blocks)
-lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
-cross_corr_cb /= np.max(cross_corr_cb)
-
-cross_corr_srt = sorted(list(enumerate(cross_corr_cb)), key=lambda i:i[1], reverse=True)
-lead = lags[cross_corr_srt[0][0]]
-lag = lags[cross_corr_srt[1][0]]
-print(f'lead: {lead} ', f'lag: {lag} ')
-
-plt.plot(lags, cross_corr_cb)
-plt.xlabel('Lags')
-plt.ylabel('Correlation')
-# plt.show()
-plt.close()
-
-# mod x bg
-cross_corr_bg = signal.correlate(mod_cort_avg_blocks, eigen_bg_avg_blocks)
-lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
-cross_corr_bg /= np.max(cross_corr_bg)
-
-cross_corr_srt = sorted(list(enumerate(cross_corr_bg)), key=lambda i:i[1], reverse=True)
-lead = lags[cross_corr_srt[0][0]]
-lag = lags[cross_corr_srt[1][0]]
-print(f'lead: {lead} ', f'lag: {lag} ')
-
-plt.plot(lags, cross_corr_bg)
-plt.xlabel('Lags')
-plt.ylabel('Correlation')
-# plt.show()
-plt.close()
-
-# plot modxbg and modxcb cross corr together
-plt.plot(lags, cross_corr_bg, label='cross_corr_bg')
-plt.plot(lags, cross_corr_cb, label='cross_corr_cb')
-plt.xlabel('Lags')
-plt.ylabel('Correlation')
-plt.legend()
-# plt.show()
-plt.close()
+"""
 
 
 # create lag and lead df - average task blocks
@@ -608,4 +593,188 @@ df_mlm_ts_avg_blks_shift.to_csv('cort_mod_baba_eigen_ts_avg_blks_shift.csv', ind
 
 # print(df_mlm_ts_avg_blks_shift)
 # print(df_mlm_ts_avg_blks_shift.columns.values[9:], len(df_mlm_ts_avg_blks_shift.columns.values[9:]))
-# sys.exit()
+
+
+## CROSS CORRELATION - ALL SUBJS
+lags = signal.correlation_lags(len(eigen_bg_avg_blocks), len(eigen_cb_avg_blocks))
+
+cross_corr_modxcb = np.array(list(map(lambda sub: signal.correlate(sub[0], sub[1])/np.max(signal.correlate(sub[0], sub[1])), \
+                        zip(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z))))
+# cross_corr_modxcb = np.array(list(map(lambda sub: np.correlate(sub[0], sub[1], mode='full')/(np.std(sub[0])*np.std(sub[1])), \
+#                         zip(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z))))
+cross_corr_modxcb_std = np.array(list(map(lambda i: np.std(i), cross_corr_modxcb.T)))
+cross_corr_modxcb_avg = np.mean(cross_corr_modxcb, axis=0)
+
+# plt.hist(cross_corr_modxcb) # no norm
+# plt.xlabel('Covariance value')
+# plt.ylabel('Count')
+# plt.show()
+
+cross_corr_modxbg = np.array(list(map(lambda sub: signal.correlate(sub[0], sub[1])/np.max(signal.correlate(sub[0], sub[1])), \
+                        zip(q_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))))
+cross_corr_modxbg_std = np.array(list(map(lambda i: np.std(i), cross_corr_modxbg.T)))
+cross_corr_modxbg_avg = np.mean(cross_corr_modxbg, axis=0)
+
+cross_corr_cbxbg = np.array(list(map(lambda sub: signal.correlate(sub[0], sub[1])/np.max(signal.correlate(sub[0], sub[1])), \
+                        zip(eigen_cb_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))))
+cross_corr_cbxbg_std = np.array(list(map(lambda i: np.std(i), cross_corr_cbxbg.T)))
+cross_corr_cbxbg_avg = np.mean(cross_corr_cbxbg, axis=0)
+
+
+## plot
+fig, ax = plt.subplots(3,1, figsize=(7,7), sharex=True)
+
+# mod x cb
+ax[0].plot(lags, cross_corr_modxcb_avg, lw=1.7, c=p_dict['var_corr_cort_cb'])
+ax[0].fill_between(lags, cross_corr_modxcb_avg-cross_corr_modxcb_std, \
+    cross_corr_modxcb_avg+cross_corr_modxcb_std, lw=0, color=p_dict['var_corr_cort_cb'], \
+                   alpha=0.3)
+# ax[0].set_title('Cortex & Cb', size=12, fontname='serif', weight='bold')
+ax[0].set_ylim(-1.1, 1.1)
+ax[0].set_yticks(np.arange(-1, 1.1))
+
+# mod x bg
+ax[1].plot(lags, cross_corr_modxbg_avg, lw=1.7, c=p_dict['var_corr_cort_bg'])
+ax[1].fill_between(lags, cross_corr_modxbg_avg-cross_corr_modxbg_std, \
+    cross_corr_modxbg_avg+cross_corr_modxbg_std, lw=0, color=p_dict['var_corr_cort_bg'], \
+                   alpha=0.3)
+# ax[1].set_title('Cortex & Bg', size=12, fontname='serif', weight='bold')
+ax[1].set_ylim(-1.1, 1.1)
+ax[1].set_yticks(np.arange(-1, 1.1))
+
+# cb x bg
+ax[2].plot(lags, cross_corr_cbxbg_avg, lw=1.7, c=p_dict['var_corr_cb_bg'])
+ax[2].fill_between(lags, cross_corr_cbxbg_avg-cross_corr_cbxbg_std, \
+    cross_corr_cbxbg_avg+cross_corr_cbxbg_std, lw=0, color=p_dict['var_corr_cb_bg'], \
+                   alpha=0.3)
+# ax[2].set_title('Cb & Bg', size=12, fontname='serif', weight='bold')
+ax[2].set_ylim(-1.1, 1.1)
+ax[2].set_yticks(np.arange(-1, 1.1))
+
+ax[0].text(-90, 1.2, 'A', size=30, fontname='serif')
+ax[1].text(-90, 1.2, 'B', size=30, fontname='serif')
+ax[2].text(-90, 1.2, 'C', size=30, fontname='serif')
+
+plt.xlabel('Lags', size=13, fontname='serif')
+fig.supylabel('Correlation', size=13, fontname='serif')
+ax[0].legend(handles=[var_corr_cort_cb, var_corr_cort_bg, var_corr_cb_bg], prop={'size':9.2}, bbox_to_anchor=(1.009, 1.3), loc=1) #
+plt.tight_layout()
+plt.savefig('cross_corr_eigenvec_cen_bg_cb_mod_cort_subplots.png', dpi=2000)
+plt.show()
+
+
+###################
+# VECTOR AUTOREGRESSION - mod cortex, eigen bg, eigen cb
+"""
+var_allsub_lag1 = var_allsub(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z, \
+                             eigen_bg_allsub_avg_blocks_smooth_z)
+var_allsub_lag11 = var_allsub(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z, \
+                             eigen_bg_allsub_avg_blocks_smooth_z, lag=11)
+var_allsub_lag26 = var_allsub(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z, \
+                             eigen_bg_allsub_avg_blocks_smooth_z, lag=26)
+var_allsub_lag30 = var_allsub(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z, \
+                             eigen_bg_allsub_avg_blocks_smooth_z, lag=30)
+print('\nVAR lag1:\n', impy_params(var_allsub_lag1))
+print('\nVAR lag11:\n', impy_params(var_allsub_lag11))
+print('\nVAR lag26:\n', impy_params(var_allsub_lag26))
+print('\nVAR lag30:\n', impy_params(var_allsub_lag30))
+"""
+
+# get var lags for each subject, do impyutation for sample statistics, save
+
+coeff_lags_lst = []
+stderr_lags_lst = []
+corr_lags_lst = []
+std_lags_lst = []
+for i in range(1,36):
+    print(i)
+    var_allsub_lag = var_allsub(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z, \
+                             eigen_bg_allsub_avg_blocks_smooth_z, lag=i)
+    lag_corr_std = np.std(var_allsub_lag[-1], axis=0)
+    # impy_vars = impy_params(np.delete(var_allsub_lag, 1))
+    impy_vars = impy_params(var_allsub_lag)
+
+    coeff_lags_lst.append(impy_vars[0])
+    stderr_lags_lst.append(impy_vars[1])
+    corr_lags_lst.append(impy_vars[2])
+    std_lags_lst.append(lag_corr_std)
+
+np.save(f'var_coeff_lags35.npy', coeff_lags_lst)
+np.save(f'var_stderr_lags35.npy', stderr_lags_lst)
+np.save(f'var_corr_lags35.npy', corr_lags_lst)
+np.save(f'var_corr_std_lags35.npy', std_lags_lst)
+
+sys.exit()
+
+var_coeff_lags35 = np.load('var_coeff_lags35.npy')
+var_corr_lags35 = np.load('var_corr_lags35.npy')
+var_corr_std_lags35 = np.load('var_corr_std_lags35.npy')
+
+# lag 17, point bg and cb correlated, bg peak beginning of task cb end
+print('\nVAR coeff lag1:\n', var_coeff_lags35[0])
+print('VAR corr lag1:\n', var_corr_lags35[0])
+
+print('\nVAR coeff lag17:\n', var_coeff_lags35[16])
+print('VAR corr lag17:\n', var_corr_lags35[16])
+
+# PLOT lag35 VAR coefficients and correlation - subplots
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7), sharex=True)
+
+# plot VAR beta coefficients
+# eigen cb and eigen bg
+ax1.plot(list(range(1, 36)), var_coeff_lags35.T[1], c=p_dict['cb_line_eig_var_b'], marker='o', markevery=[16], lw=1)
+ax1.plot(list(range(1, 36)), var_coeff_lags35.T[2], c=p_dict['bg_line_eig_var_b'], marker='o', markevery=[16], lw=1)
+ax1.get_xaxis().set_visible(True)
+
+# make eigen y axis label diff colours
+ybox1 = TextArea('(\u03B2)', textprops=dict(c='k', size=11, fontname='serif', \
+                                            rotation=90, ha='left', va='top'))
+ybox2 = TextArea('Centrality', textprops=dict(c=p_dict['bg_line_eig_var_b'], \
+                            size=11, fontname='serif', rotation=90, va='center'))
+ybox3 = TextArea('Eigenvector', textprops=dict(c=p_dict['cb_line_eig_var_b'], \
+                    size=11, fontname='serif', rotation=90, ha='left', va='bottom'))
+
+ybox = VPacker(children=[ybox2, ybox3], align='left', pad=0, sep=35)
+anchored_ybox = AnchoredOffsetbox(loc=8, child=ybox, pad=0, frameon=False, bbox_to_anchor=(-0.139, 0.1),
+                                  bbox_transform=ax1.transAxes, borderpad=0)
+ax1.add_artist(anchored_ybox)
+
+ybox = VPacker(children=[ybox1], align='left', pad=0, sep=30)
+anchored_ybox = AnchoredOffsetbox(loc=8, child=ybox, pad=0, frameon=False, bbox_to_anchor=(-0.139, 0.86),
+                                  bbox_transform=ax1.transAxes, borderpad=0)
+ax1.add_artist(anchored_ybox)
+
+# make separate y axis for modularity
+ax1_mod = ax1.twinx()
+ax1_mod.set_ylabel('Modularity (β)', size=11, fontname='serif')
+ax1_mod.set_ylim(-0.65, 0.85)
+# ax1_mod.set_yticks(np.arange(-1.5, 2, 1))
+ax1.plot(list(range(1, 36)), var_coeff_lags35.T[0], c=p_dict['cort_line_cb'], \
+                                marker='o', markevery=[16], lw=1, zorder=0)
+
+ax1.legend(handles=[cort_line_mod_less, cb_line_eig_var_b, bg_line_eig_var_b], prop={'size': 8}, loc=1)
+
+# plot correlation
+# mod x cb
+ax2.plot(list(range(1, 36)), var_corr_lags35.T[0], label='mod x cb', c=p_dict['var_corr_cort_cb'], \
+         marker='o', ms=8, markevery=[16], lw=2, ls='-')  # sky blue = #17a8fa
+
+# mod x bg
+ax2.plot(list(range(1, 36)), var_corr_lags35.T[1], label='mod x bg', c=p_dict['var_corr_cort_bg'], \
+         marker='o', ms=8, markevery=[16], lw=2, ls='-')  # berry pink = #ea00a5 - salmon bright pink = #ff007f
+
+# cb x bg
+ax2.plot(list(range(1, 36)), var_corr_lags35.T[2], label='cb x bg', c=p_dict['var_corr_cb_bg'], \
+         marker='o', ms=8, markevery=[16], lw=2, ls='-')  # lime green less bright = #03c90a
+
+ax2.set_ylabel('Correlation', size=11, fontname='serif')
+ax2.set_xlabel('Lags', size=12, fontname='serif')
+ax2.legend(handles=[var_corr_cort_cb, var_corr_cort_bg, var_corr_cb_bg], prop={'size': 8}, \
+           loc=1,bbox_to_anchor=(1, 0.7))
+
+ax1.text(-6.8, 0.8, 'A', size=30, fontname='serif')
+ax2.text(-6.8, 0.125, 'B', size=30, fontname='serif')
+
+plt.tight_layout()
+plt.savefig('var_coeffs_corr_eigenvec_cen_bg_cb_mod_cort_subplots.png', dpi=2000)  # 2000
+plt.show()
