@@ -202,10 +202,7 @@ df_mlm = pd.concat([df_mlm_con_melt, df_mlm_inc_melt], ignore_index=True)
 df_mlm.to_csv(f'{main_dir}IntermediateData/{task}/on_task_block_mu_mod_idx_{task}.csv', index=False)
 
 
-sys.exit()
-
-
-#### HRF PREDICT
+#### HRF PREDICT REGRESSORS
 # timepoints of image capture
 frame_times = np.arange(frs)*rt
 
@@ -236,128 +233,26 @@ for i in q_allsub_smooth_z:
     mlr_coeffs = mlr.coef_
     mlr_coeffs_lst.append(mlr_coeffs)
 # print(mlr_coeffs_lst)
+np.save(f'{main_dir}IntermediateData/{task}/mlr_coeffs_subjs_all_net_cort_mod_{task}.npy', mlr_coeffs_lst)
 
-"""
-# get coeff confidence interval
-lin = IntervalRegressor(mlr).fit(df_mod_reg['inc_reg'].values.reshape(-1, 1), q_avg)
-sorted_x = np.array(list(sorted(df_mod_reg['inc_reg'].values)))
-pred = lin.predict(sorted_x.reshape(-1, 1))
-boot_pred = lin.predict_sorted(sorted_x.reshape(-1, 1))
-min_pred = boot_pred[:, 0]
-max_pred = boot_pred[:, boot_pred.shape[-1]-1]
-print(f'inc_interval: {np.mean(min_pred)}, {np.mean(max_pred)}')
 
-import statsmodels.api as sm 
-lr_model = sm.OLS(q_avg, df_mod_reg[['inc_reg', 'con_reg']]).fit()
-print(lr_model.summary())
-sys.exit()
-"""
-
-# make diff vec
-np.save('mlr_coeffs_subjs_all_net_cort_mod.npy', mlr_coeffs_lst)
+## inc and con beta coeff - mean
 df_coeffs = pd.DataFrame(mlr_coeffs_lst, columns=['inc_coeff', 'con_coeff'])
-diff_vec = np.squeeze(list(map(lambda x:[x[1] - x[0]], mlr_coeffs_lst)))
-df_coeffs.insert(2, 'diff_vec', diff_vec)
-
-## inc and con beta coeff - single
 inc_reg = np.mean(df_coeffs['inc_coeff'].values)
 con_reg = np.mean(df_coeffs['con_coeff'].values)
 
-
-"""
-mlr.fit(df_mod_reg[['inc_reg', 'con_reg']], q_avg) 
-mlr_coeffs = mlr.coef_
-print(mlr_coeffs)
-"""
-
 # get confidence intervals
-# inc_interval = st.t.interval(alpha=0.95, df=len(df_coeffs['inc_coeff'].values)-1, \
-#                              loc=inc_reg, scale=st.sem(df_coeffs['inc_coeff'].values))
 inc_interval = st.norm.interval(alpha=0.95, loc=inc_reg, scale=st.sem(df_coeffs['inc_coeff'].values))
-
-# con_interval = st.t.interval(alpha=0.95, df=len(df_coeffs['con_coeff'].values)-1, \
-#                              loc=con_reg, scale=st.sem(df_coeffs['con_coeff'].values))
 con_interval = st.norm.interval(alpha=0.95, loc=con_reg, scale=st.sem(df_coeffs['con_coeff'].values))
 
-"""
-# load rest modularity
-q_allsub_rest = np.load('subjs_all_net_cort_q_rest.npy', allow_pickle=True)
-
-# z-score rest and get mat mean
-q_allsub_znorm_rest = np.array(list(map(lambda x: stats.zscore(x), q_allsub_rest)))
-rest_mean = np.average(q_allsub_znorm_rest)
-"""
-
-# one samp test - within subj, rest as mean
-ttest_1samp_within = stats.ttest_1samp(diff_vec, np.average(diff_vec))
-
-print(f'\nDifference vector mean: {np.average(diff_vec)}')
-print(f'One samp t-test: {ttest_1samp_within} \n')
-print("Model coefficients:")
-# print(f'inc_coeff  {round(inc_reg, 4)}    {inc_interval}')
-# print(f'con_coeff  {round(con_reg, 4)}    {con_interval}\n')
+print('\nModel coefficients:')
 print(f'inc_coeff  {inc_reg}    {inc_interval}')
 print(f'con_coeff  {con_reg}    {con_interval}\n')
 
 # save model output to csv
-m_output = open(f'subjs_all_net_cort/mlr_mod/mod_mlr_output_cort.csv', 'w')
-m_output = open(f'subjs_all_net_cort/mlr_mod/mod_mlr_output_cort.csv', 'a')
+m_output = open(f'{pars[1]}/output/{task}/mod_mlr_output_cort_{task}.csv', 'w')
+m_output = open(f'{pars[1]}/output/{task}/mod_mlr_output_cort_{task}.csv', 'a')
 writer = csv.writer(m_output)
 
-writer.writerow(['Difference vector mean ', np.average(diff_vec)])
-writer.writerow(['One samp t-test ', ttest_1samp_within])
 writer.writerow(['inc_coeff ', inc_reg, inc_interval])
 writer.writerow(['con_coeff ', con_reg, con_interval])
-
-
-## SWARM PLOT - of beta coeffs
-# single
-# sns.swarmplot(x=diff_vec, zorder=1)
-# sns.pointplot(x=diff_vec, ci=95, join=False, color='black', seed=0)
-# plt.show()
-
-# two groups
-df_coeffs_melt = pd.DataFrame(list(itertools.chain( \
-                    list(map(lambda i: [i[0], 'Incongruent'], mlr_coeffs_lst)), \
-                    list(map(lambda i: [i[1], 'Congruent'], mlr_coeffs_lst)))  ), \
-                              columns=['coeff', 'task'])
-df_coeffs_melt_diff = pd.concat([pd.DataFrame(list(map(lambda i: [i, 'Difference'], \
-                            diff_vec)), columns=['coeff', 'task']), df_coeffs_melt])
-
-# plt.figure(figsize=(22,13), dpi=300) # 8, 12
-plt.figure(figsize=(15,10.5), dpi=300) # 8, 12  # no smooth
-sns.set(font='serif', font_scale=1.8)
-sns.swarmplot(x='task', y='coeff', data=df_coeffs_melt_diff, \
-              order=['Incongruent', 'Congruent', 'Difference'], zorder=1, \
-              palette=p_dict, alpha=0.8, size=6)
-sns.pointplot(x='task', y='coeff', data=df_coeffs_melt_diff, \
-              order=['Incongruent', 'Congruent', 'Difference'], ci=95, \
-              join=False, color='black', scale=1.25, errwidth=3, seed=0)
-
-plt.xlabel('Task block', size=20, fontname="serif")
-plt.ylabel('Beta coefficients (Q)', size=20, fontname="serif")
-# plt.subplots_adjust(wspace=.2)
-plt.tight_layout()
-# plt.savefig('subjs_all_net_cort/mlr/allsub_cortnet_mod_swarm_diff.png', dpi=300)
-# plt.show()
-plt.close()
-
-
-## STRIPLOT
-sns.set(font='serif', font_scale=.95)
-sns.stripplot(x='task', y='coeff', data=df_coeffs_melt_diff, \
-              order=['Incongruent', 'Congruent', 'Difference'], zorder=1, \
-              palette=p_dict, alpha=0.8, size=3, jitter=0.2) #jitter=0.25 # no smooth = no jitter
-sns.pointplot(x='task', y='coeff', data=df_coeffs_melt_diff, \
-              order=['Incongruent', 'Congruent', 'Difference'], ci=95, \
-              join=False, color='black', scale=0.7, seed=0)
-plt.xlabel('Task block', size=10.5, fontname="serif")
-plt.ylabel('Beta coefficients (Q)', size=10.5, fontname="serif")
-plt.tight_layout()
-# plt.savefig('subjs_all_net_cort/mlr/allsub_cortnet_stripplot_diff.png', dpi=300)
-# plt.show()
-plt.close()
-
-
-# print(df_coeffs)
-# C - I

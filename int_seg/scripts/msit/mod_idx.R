@@ -9,6 +9,7 @@ library(lme4)
 library(broom)
 
 filepath = '/home/kimberlynestor/gitrepo/int_seg/data/IntermediateData/msit'
+output = '/home/kimberlynestor/gitrepo/int_seg/output/msit'
 
 ## ON TASK
 # load data
@@ -19,5 +20,5 @@ on.task.mod.idx = read.csv(file=file.path(filepath, 'on_task_block_mu_mod_idx_ms
 on.task.mlm.sum = summary(lmer(mu_mod_idx ~ task + block + task:block + 
                                  (task | subj_ID), on.task.mod.idx))
 
-write.csv(on.task.mlm.sum$coefficients, file.path(filepath, 'on_task_mod_idx_mlm_output_cort_msit.csv'))
+write.csv(on.task.mlm.sum$coefficients, file.path(output, 'on_task_mod_idx_mlm_output_cort_msit.csv'))
 on.task.mlm.sum
