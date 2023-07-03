@@ -42,7 +42,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-task = 'msit'
+task = 'stroop'
 
 
 # calculate modularity for all subjects, save
@@ -92,13 +92,14 @@ q_avg_smooth_z_mask = np.ma.array(np.insert(stats.zscore(np.average(np.array(lis
 mod_ci_all = list(map(lambda i: st.norm.interval(alpha=0.95, loc=np.mean(i), scale=st.sem(i)), q_allsub_smooth_z_allpts.T))
 mod_lb = stats.zscore(np.array(mod_ci_all).T[0])
 mod_ub = stats.zscore(np.array(mod_ci_all).T[1])
-mod_sterr_allpts = list(map(lambda i: st.sem(i), q_allsub_smooth_z_allpts.T))
+mod_sterr_allpts = np.array(list(map(lambda i: st.sem(i), q_allsub_smooth_z_allpts.T)))
+mod_ci_allpts = mod_sterr_allpts*ci
 mod_std_allpts = list(map(lambda i: np.std(i), q_allsub_smooth_z_allpts.T))
 
 plt.axhline(y=0, c='k', lw=1.2, alpha=0.2, ls='--', dashes=(5, 5))
 plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask, lw=1, c=p_dict['cort_line_cb']) # 0.2
-plt.fill_between(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask-mod_std_allpts, \
-                 q_avg_smooth_z_mask+mod_std_allpts, lw=0, color=p_dict['cort_line'], alpha=0.6)
+plt.fill_between(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask-mod_ci_allpts, \
+                 q_avg_smooth_z_mask+mod_ci_allpts, lw=0, color=p_dict['cort_line'], alpha=0.6)
 
 plt.xticks(np.arange(0, frs*rt, 60))
 plt.xlabel('Time (s)', size=15, fontname='serif')
@@ -111,11 +112,10 @@ for i in range(len(inc_block)):
     plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent_cb'], alpha=0.15) # tab:orange, 0.22 - cc, .35
     # congruent
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent_cb'], alpha=0.16) # tab:blue, 0.2, #91C1E2
-# plt.ylim(-3.5, 2.25)
-plt.ylim(-4.5, 3.25)
+plt.ylim(-3.5, 2.5)
 plt.legend(handles=[inc_patch_cb, con_patch_cb], loc=4)
 plt.tight_layout()
-plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_std_{task}.png', dpi=2000)
+plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_ci_{task}.png', dpi=2000)
 plt.show()
 
 

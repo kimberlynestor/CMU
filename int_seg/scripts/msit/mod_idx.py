@@ -20,15 +20,9 @@ par_dir = pars[0]
 sys.path.insert(0, str(par_dir))
 
 from os.path import join as opj
-from operator import itemgetter
 from time import *
 import itertools
-
-from csv import writer
-from csv import DictWriter
 import csv
-
-import bct
 
 import jr_funcs as jr
 from bg_cb_funcs import *
@@ -38,35 +32,23 @@ from config import *
 import numpy as np
 import pandas as pd
 
-import math
-from scipy import stats
-from scipy.ndimage import gaussian_filter
-from sklearn.linear_model import LinearRegression
-from mlinsights.mlmodel import IntervalRegressor
-
-from statsmodels.tsa.ar_model import AutoReg
-from scipy.stats import zscore
 from scipy import stats
 import scipy.stats as st
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
-
-from nilearn.image import load_img
+from scipy.ndimage import gaussian_filter
+from sklearn.linear_model import LinearRegression
 from nilearn.glm.first_level import compute_regressor
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-import ptitprince as pt
+
 
 task = 'msit'
-figs_dir = '/home/kimberlynestor/gitrepo/int_seg/output/'
 
 
-# load modularity time series, remove init 5, smooth, z score
+# calculate modularity for all subjects, save
 # save_mod_idx(subj_lst, task=task) # run this line once
 
-
-# cortex
+# load modularity time series, remove init 5, smooth, z score - cortex
 q_allsub = np.load(f'{main_dir}IntermediateData/{task}/subjs_all_net_cort_q_{task}.npy')
 q_allsub_z = np.array(list(map(lambda i: stats.zscore(i[5:]), q_allsub)))
 q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), q_allsub))) # sigma=2
@@ -95,7 +77,7 @@ mod_cort_avg_blocks_allsub = np.array(list(map(lambda sub: np.nanmean(np.array(l
 q_avg = np.average(q_allsub, axis=0)
 q_avg_smooth = np.average(q_allsub_smooth, axis=0)
 q_avg_smooth_z = stats.zscore(q_avg_smooth)
-# np.save(f'q_avg_smooth_z_cort_stroop.npy', q_avg_smooth_z)
+np.save(f'{main_dir}IntermediateData/{task}/q_avg_smooth_z_cort_{task}.npy', q_avg_smooth_z)
 
 
 ###### MODULARITY LINE GRAPH
@@ -110,13 +92,14 @@ q_avg_smooth_z_mask = np.ma.array(np.insert(stats.zscore(np.average(np.array(lis
 mod_ci_all = list(map(lambda i: st.norm.interval(alpha=0.95, loc=np.mean(i), scale=st.sem(i)), q_allsub_smooth_z_allpts.T))
 mod_lb = stats.zscore(np.array(mod_ci_all).T[0])
 mod_ub = stats.zscore(np.array(mod_ci_all).T[1])
-mod_sterr_allpts = list(map(lambda i: st.sem(i), q_allsub_smooth_z_allpts.T))
+mod_sterr_allpts = np.array(list(map(lambda i: st.sem(i), q_allsub_smooth_z_allpts.T)))
+mod_ci_allpts = mod_sterr_allpts*ci
 mod_std_allpts = list(map(lambda i: np.std(i), q_allsub_smooth_z_allpts.T))
 
 plt.axhline(y=0, c='k', lw=1.2, alpha=0.2, ls='--', dashes=(5, 5))
 plt.plot(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask, lw=1, c=p_dict['cort_line_cb']) # 0.2
-plt.fill_between(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask-mod_std_allpts, \
-                 q_avg_smooth_z_mask+mod_std_allpts, lw=0, color=p_dict['cort_line'], alpha=0.6)
+plt.fill_between(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask-mod_ci_allpts, \
+                 q_avg_smooth_z_mask+mod_ci_allpts, lw=0, color=p_dict['cort_line'], alpha=0.6)
 
 plt.xticks(np.arange(0, frs*rt, 60))
 plt.xlabel('Time (s)', size=15, fontname='serif')
@@ -129,11 +112,10 @@ for i in range(len(inc_block)):
     plt.axvspan(inc_block[i][0], inc_block[i][1], facecolor=p_dict['Incongruent_cb'], alpha=0.15) # tab:orange, 0.22 - cc, .35
     # congruent
     plt.axvspan(con_block[i][0], con_block[i][1], facecolor=p_dict['Congruent_cb'], alpha=0.16) # tab:blue, 0.2, #91C1E2
-# plt.ylim(-3.5, 2.25)
-plt.ylim(-4.5, 3.25)
+plt.ylim(-2.85, 2.5)
 plt.legend(handles=[inc_patch_cb, con_patch_cb], loc=4)
 plt.tight_layout()
-plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_std_{task}.png', dpi=2000)
+plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_ci_{task}.png', dpi=2000)
 plt.show()
 
 

@@ -33,7 +33,7 @@ from matplotlib import gridspec
 import matplotlib.colors as colors
 
 
-task = 'stroop'
+task = 'msit'
 
 
 q_avg_smooth_z_cort = np.load(f'{main_dir}IntermediateData/{task}/q_avg_smooth_z_allpts_cort_{task}.npy')
@@ -130,8 +130,8 @@ ax.fill_between(np.arange(group_blocks[0][0]*rt, (group_blocks[0][1]+1)*rt, 2), 
                  gaussian_filter(mod_cort_avg_blocks, sigma=1)+q_ci_allpts, \
                         lw=0, color=p_dict['cort_line_cb'], alpha=0.4)
 ax.set_xlabel('Time (s)', size=12, fontname='serif')
-ax.set_ylim(-1.75, 2.5)
-ax.set_yticks(np.arange(-1.75, 2.5, 1))
+ax.set_ylim(-1.5, 2.25)
+ax.set_yticks(np.arange(-1.5, 2.25, 1))
 
 # make eigen y axis label diff colours
 ybox1 = TextArea('(z-scored)', textprops=dict(c='k', size=11, fontname='serif', rotation=90, ha='left', va='top'))
@@ -157,8 +157,8 @@ ax2.fill_between(np.arange(group_blocks[0][0]*rt, (group_blocks[0][1]+1)*rt, 2),
                         lw=0, color=p_dict['cb_line_eig'], alpha=0.4)
 
 ax2.set_ylabel('Modularity (Q/z)', size=12, fontname='serif')
-ax2.set_ylim(-1.75, 2.5)
-ax2.set_yticks(np.arange(-1.75, 2.5, 1))
+ax2.set_ylim(-1.5, 2.25)
+ax2.set_yticks(np.arange(-1.5, 2.25, 1))
 
 # colour plot background with breakpoints
 plt.axvspan(inc_block_frames[0][0]*rt, inc_block_frames[0][1]*rt, facecolor=p_dict['Incongruent_cb'], alpha=0.15)
@@ -173,7 +173,9 @@ plt.show()
 
 ## CROSS CORRELATION - ALL SUBJS - HOMEMADE
 lags = np.array(cross_corr_vec(eigen_cb_avg_blocks, eigen_bg_avg_blocks, lags=15)[1])
+# cross_corr_vec(eigen_cb_avg_blocks, eigen_bg_avg_blocks, lags=15, pval=True)
 
+# get cross correlation for vectors
 cross_corr_modxcb = np.array(list(map(lambda sub: cross_corr_vec(sub[0], sub[1], lags=15)[0], \
                         zip(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z))))
 cross_corr_modxcb_std = np.array(list(map(lambda i: np.std(i), cross_corr_modxcb.T)))
@@ -195,6 +197,29 @@ cross_corr_cbxbg_sem = np.array(list(map(lambda i: st.sem(i), cross_corr_cbxbg.T
 cross_corr_cbxbg_ci = cross_corr_cbxbg_sem*ci
 cross_corr_cbxbg_avg = np.mean(cross_corr_cbxbg, axis=0)
 
+"""
+# get pvals for each vector
+cross_corr_modxcb = np.array(list(map(lambda sub: cross_corr_vec(sub[0], sub[1], lags=15, pval=True), \
+                        zip(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z))))
+cross_corr_modxcb_std = np.array(list(map(lambda i: np.std(i), cross_corr_modxcb.T)))
+cross_corr_modxcb_sem = np.array(list(map(lambda i: st.sem(i), cross_corr_modxcb.T)))
+cross_corr_modxcb_ci = cross_corr_modxcb_sem*ci
+cross_corr_modxcb_avg = np.mean(cross_corr_modxcb, axis=0)
+
+cross_corr_modxbg = np.array(list(map(lambda sub: cross_corr_vec(sub[0], sub[1], lags=15, pval=True), \
+                        zip(q_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))))
+cross_corr_modxbg_std = np.array(list(map(lambda i: np.std(i), cross_corr_modxbg.T)))
+cross_corr_modxbg_sem = np.array(list(map(lambda i: st.sem(i), cross_corr_modxbg.T)))
+cross_corr_modxbg_ci = cross_corr_modxbg_sem*ci
+cross_corr_modxbg_avg = np.mean(cross_corr_modxbg, axis=0)
+
+cross_corr_cbxbg = np.array(list(map(lambda sub: cross_corr_vec(sub[0], sub[1], lags=15, pval=True), \
+                        zip(eigen_cb_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))))
+cross_corr_cbxbg_std = np.array(list(map(lambda i: np.std(i), cross_corr_cbxbg.T)))
+cross_corr_cbxbg_sem = np.array(list(map(lambda i: st.sem(i), cross_corr_cbxbg.T)))
+cross_corr_cbxbg_ci = cross_corr_cbxbg_sem*ci
+cross_corr_cbxbg_avg = np.mean(cross_corr_cbxbg, axis=0)
+"""
 
 ## plot correlations in subplots
 fig, ax = plt.subplots(3,1, figsize=(7,7), sharex=True)
@@ -289,6 +314,19 @@ ax2.legend(prop={'size': 7.5}, loc=1)
 plt.tight_layout()
 plt.savefig(f'{pars[1]}/output/{task}/gc_stat_eigenvec_cen_bg_cb_mod_cort_subplots_{task}.png', dpi=2000)
 plt.show()
+
+
+from pyinform import transfer_entropy
+
+te_cort_cb = transfer_entropy(abs(mod_cort_avg_blocks), abs(eigen_cb_avg_blocks), k=1)
+te_cort_bg = transfer_entropy(abs(mod_cort_avg_blocks), abs(eigen_bg_avg_blocks), k=1)
+te_cb_bg = transfer_entropy(abs(eigen_cb_avg_blocks), abs(eigen_bg_avg_blocks), k=1)
+
+print(te_cort_cb, te_cort_bg, te_cb_bg)
+
+# gc_cort_cb_rev = grangercausalitytests(list(zip(eigen_cb_avg_blocks, mod_cort_avg_blocks)), 8)
+# gc_cort_bg_rev = grangercausalitytests(list(zip(eigen_bg_avg_blocks, mod_cort_avg_blocks)), 8)
+# gc_cb_bg_rev = grangercausalitytests(list(zip(eigen_bg_avg_blocks, eigen_cb_avg_blocks)), 8)
 
 
 

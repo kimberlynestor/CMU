@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 
 
-task = 'stroop'
+task = 'msit'
 
 
 # calculate eigenvec cen for all subjects, save
