@@ -54,6 +54,8 @@ p_dict = {'Incongruent_cb':'#ff0080', 'Congruent_cb':'#0080ff', 'Difference_cb':
 # p_dict_cb = {'Incongruent':'#ff3098', 'Congruent':'#1b8bfa', 'inc':'#b0b0b0', 'con':'#808080'}
 p_dict_cb = {'Incongruent':'#ff0080', 'Congruent':'#0080ff', 'inc':'#b0b0b0', 'con':'#808080'} # super bright
 
+font_lst = ['Liberation Sans', 'Lohit Devanagari', 'serif']
+
 # legend patches
 inc_patch = mpatches.Patch(color=p_dict['Incongruent'], label='Incongruent', alpha=0.7) # 0.35
 con_patch = mpatches.Patch(color=p_dict['Congruent'], label='Congruent', alpha=0.7) # 0.35

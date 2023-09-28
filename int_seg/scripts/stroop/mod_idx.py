@@ -89,7 +89,7 @@ q_avg_smooth_z_mask = np.ma.array(np.insert(stats.zscore(np.average(np.array(lis
                             0, np.ones(5)), mask=np.pad(np.ones(5), (0,frs-5)))
 
 ## SINGLE CORTEX LINE GRAPH - with STD spread
-mod_ci_all = list(map(lambda i: st.norm.interval(alpha=0.95, loc=np.mean(i), scale=st.sem(i)), q_allsub_smooth_z_allpts.T))
+mod_ci_all = list(map(lambda i: st.norm.interval(0.95, loc=np.mean(i), scale=st.sem(i)), q_allsub_smooth_z_allpts.T))
 mod_lb = stats.zscore(np.array(mod_ci_all).T[0])
 mod_ub = stats.zscore(np.array(mod_ci_all).T[1])
 mod_sterr_allpts = np.array(list(map(lambda i: st.sem(i), q_allsub_smooth_z_allpts.T)))
@@ -102,9 +102,9 @@ plt.fill_between(np.arange(0, frs*rt, 2), q_avg_smooth_z_mask-mod_ci_allpts, \
                  q_avg_smooth_z_mask+mod_ci_allpts, lw=0, color=p_dict['cort_line'], alpha=0.6)
 
 plt.xticks(np.arange(0, frs*rt, 60))
-plt.xlabel('Time (s)', size=15, fontname='serif')
-plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
-plt.title(task.upper(), size=20, fontname='serif', fontweight='bold')
+plt.xlabel('Time (s)', size=15, fontname=font_lst[0])
+plt.ylabel('Modularity (z-scored)', size=15, fontname=font_lst[0])
+plt.title(task.upper(), size=28, fontname=font_lst[0], fontweight='bold')
 
 # colour plot background with breakpoints
 for i in range(len(inc_block)):
@@ -155,9 +155,9 @@ plt.axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(13, 25))
 
 sns.pointplot(x='block', y='mod_idx', hue='task', data=df_task, \
                     join=False, palette=p_dict_cb, errwidth=5, scale=2, alpha=0.9) # capsize=0.5
-plt.xlabel('Task Block', size=15, fontname='serif')
-plt.ylabel('Modularity (Q/z)', size=15, fontname='serif')
-plt.title(task.upper(), size=20, fontname='serif', fontweight='bold')
+plt.xlabel('Task Block', size=15, fontname=font_lst[0])
+plt.ylabel('Modularity (z-scored)', size=15, fontname=font_lst[0])
+plt.title(task.upper(), size=28, fontname=font_lst[0], fontweight='bold')
 plt.legend((inc_circ_cb, con_circ_cb), ('Incongruent', 'Congruent'), numpoints=1, loc=1)
 plt.tight_layout()
 plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_ontask_cb_{task}.png', dpi=2000)
@@ -224,8 +224,8 @@ inc_reg = np.mean(df_coeffs['inc_coeff'].values)
 con_reg = np.mean(df_coeffs['con_coeff'].values)
 
 # get confidence intervals
-inc_interval = st.norm.interval(alpha=0.95, loc=inc_reg, scale=st.sem(df_coeffs['inc_coeff'].values))
-con_interval = st.norm.interval(alpha=0.95, loc=con_reg, scale=st.sem(df_coeffs['con_coeff'].values))
+inc_interval = st.norm.interval(0.95, loc=inc_reg, scale=st.sem(df_coeffs['inc_coeff'].values))
+con_interval = st.norm.interval(0.95, loc=con_reg, scale=st.sem(df_coeffs['con_coeff'].values))
 
 print('\nModel coefficients:')
 print(f'inc_coeff  {inc_reg}    {inc_interval}')
