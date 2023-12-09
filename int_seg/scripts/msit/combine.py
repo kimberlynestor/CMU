@@ -170,7 +170,7 @@ plt.axvspan(con_block_frames[0][0]*rt, con_block_frames[0][1]*rt, facecolor=p_di
 # plt.text(91, 2.1, 'Congruent', size=20, fontname=font_lst[0], c=p_dict['Congruent_cb'])
 
 plt.legend(handles=[inc_patch_cb, con_patch_cb, cort_line_mod_eig_less, bg_line_eig, cb_line_eig], prop={'size':7.5}, loc=1)
-plt.title(task.upper(), size=30, fontname=font_lst[0], fontweight='bold')
+plt.title(task.upper(), size=28, fontname=font_lst[0], fontweight='bold')
 plt.tight_layout()
 plt.savefig(f'{pars[1]}/output/{task}/eigenvec_cen_bg_cb_mod_cort_smooth_sig2_avg_blocks_cb_z_yerr_ci_{task}.png', dpi=2000)
 plt.show()
@@ -230,7 +230,7 @@ cross_corr_cbxbg_avg = np.mean(cross_corr_cbxbg, axis=0)
 
 ## plot correlations in subplots
 fig, ax = plt.subplots(3,1, figsize=(7,7), sharex=True)
-fig.suptitle(task.upper(), size=30, fontname=font_lst[0], fontweight='bold', x=0.575)
+fig.suptitle(task.upper(), size=28, fontname=font_lst[0], fontweight='bold', x=0.575)
 
 # mod x bg
 ax[0].axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(11, 21))
@@ -270,6 +270,25 @@ plt.tight_layout()
 plt.savefig(f'{pars[1]}/output/{task}/cross_corr_eigenvec_cen_bg_cb_mod_cort_subplots_{task}.png', dpi=2000)
 plt.show()
 
+
+#### Reliability test prep
+# cort, bg
+cort_bg_diff_lag4 = np.array(list(map(lambda tup: tup[1][4:] - tup[0][:-4], \
+                        zip(q_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))))
+np.save(f'{main_dir}IntermediateData/{task}/cross_corr_cort_bg_peak_diff_{task}.npy', cort_bg_diff_lag4)
+
+
+cort_cb_diff_lag0 = np.array(list(map(lambda tup: tup[1] - tup[0], \
+                        zip(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z))))
+np.save(f'{main_dir}IntermediateData/{task}/cross_corr_cort_cb_peak_diff_{task}.npy', cort_cb_diff_lag0)
+
+
+cb_bg_diff_lag0 = np.array(list(map(lambda tup: tup[1] - tup[0], \
+                        zip(eigen_cb_allsub_avg_blocks_smooth_z, eigen_bg_allsub_avg_blocks_smooth_z))))
+np.save(f'{main_dir}IntermediateData/{task}/cross_corr_cb_bg_peak_diff_{task}.npy', cb_bg_diff_lag0)
+
+
+sys.exit()
 
 #### GRANGER CAUSALITY - transfer entropy
 # bottom up, subcortical to cortical -- difference correction - for stationarity
