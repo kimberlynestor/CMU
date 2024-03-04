@@ -3,10 +3,11 @@ Name: Kimberly Nestor
 Class: CMU 10-733 NeuroAI
 Date: 2/28/24
 
-Description: Use
+Description: Resample model embeddings to match fMRI timescale in TR, shift to account for HRF lag, normalize.
+Resample fMRI data for timescale and match cortical voxel to dimension of model layer.
 
-Disclosures: I used the following links for help in this hw.
-
+Disclosures: I used the following link for help with the fMRI shift/ FIR model part of this script.
+https://github.com/HuthLab/speechmodeltutorial/blob/master/SpeechModelTutorial.ipynb
 """
 
 import os

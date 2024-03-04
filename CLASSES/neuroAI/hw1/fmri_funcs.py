@@ -2,7 +2,7 @@
 Name: Kimberly Nestor
 Class: CMU 10-733 NeuroAI
 Date: 2/28/24
-Description: Helper functions to align fMRI data with words from story stimuli during scanning.
+Description: Helper functions to align model stimuli data with fMRI lag and match model and fMRI dimensions.
 """
 
 import sys
