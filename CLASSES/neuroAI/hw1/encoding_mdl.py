@@ -90,22 +90,33 @@ train_data_names = sorted(os.listdir(mdl_output_dir))
 train_data_names_coeffs = [i for i in train_data_names if 'coeffs' in i]
 train_data_names_lam = [i for i in train_data_names if 'lambda' in i]
 
+mdl_coeffs = np.load(f'{mdl_output_dir}{train_data_names_coeffs[0]}')
+
+print(len(mdl_coeffs), len(mdl_coeffs[0]))
+
 # load fmri predictions
 fmri_pred_names = sorted(os.listdir(pred_output_dir))
-pred = np.load(f'{pred_output_dir}{fmri_pred_names[0]}')
+fmri_pred = np.load(f'{pred_output_dir}{fmri_pred_names[0]}')
 
-print(len(pred), len(pred[0]))
+print(len(fmri_pred), len(fmri_pred[0]))
 
-sys.exit()
 
 #### make brain plots in pycortex
 ## plot 1 = correlation of encoding prediction and regularization coefficients - for each subj test (3), for each story (8)
 # compute_correlation(Test_Y, Pred)
-# cor = np.corrcoef(predict_fmri, predict_fmri)
+cor = np.corrcoef(fmri_pred, mdl_coeffs)
+print(cor, cor.shape)
+
+
+# 2d cortex flat map
+plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(np.ravel(cor)), colorbar=True, cmap='magma') # , vmin=-0.7, vmax=0.7
+plt.xlabel('pred and coeff\n (correlation)')
+plt.show()
 
 ## plot 2 = 1 subj, 1 ft space (story), brain plot of optimal regularization parameter (lambda)
 
 
+sys.exit()
 
 
 # lz resize to large n voxels
