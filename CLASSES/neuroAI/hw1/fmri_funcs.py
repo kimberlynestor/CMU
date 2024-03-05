@@ -15,6 +15,7 @@ import math
 import numpy as np
 
 import cv2
+import h5py # acts ac dict
 
 
 tr = 2 # from json file
@@ -50,6 +51,22 @@ def lz_resize(embed, new_shape):
     return(new_embed)
 
 
+def get_fmri_mats(data_path, id_lst, fmri_names):
+    """func takes in path to fmri data, list of ids and name of fmri files and returns data."""
+    # load fmri mats
+    all_story_mats = []
+    for story in range(len(fmri_names)):
+        # print(fmri_story_names[story])
+        all_sub_mats = []
+        for sub in range(len(id_lst)):
+            fmri_dict = h5py.File(data_path + id_lst[sub] + '/' + fmri_names[story], 'r')
+            fmri_mat = np.array(fmri_dict['data'])
+            all_sub_mats.append(fmri_mat)
+
+            # print(f'{en_subjs_id[sub]} = {fmri_mat.shape}')
+        all_story_mats.append(all_sub_mats)
+    return(all_story_mats)
 
 if __name__ == '__main__':
-    print(hrf_shift(model_embeds[0], shift=2)  [:, 0:6, :])
+    pass
+    # print(hrf_shift(model_embeds[0], shift=2)  [:, 0:6, :])

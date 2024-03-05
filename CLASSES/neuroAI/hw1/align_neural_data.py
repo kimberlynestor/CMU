@@ -110,19 +110,7 @@ en_subjs_id = all_subjs_id[:3] # use three subjects
 all_fmri_story_names = sorted(os.listdir(fmri_data_dir + en_subjs_id[0]))
 fmri_story_names = list(itertools.chain(all_fmri_story_names[0:8], [all_fmri_story_names[-2]]))
 
-# load fmri mats
-all_story_mats = []
-for story in range(len(fmri_story_names)):
-    # print(fmri_story_names[story])
-    all_sub_mats = []
-    for sub in range(len(en_subjs_id)):
-        fmri_dict = h5py.File(fmri_data_dir + en_subjs_id[sub] + '/' + fmri_story_names[story], 'r')
-        fmri_mat = np.array(fmri_dict['data'])
-        all_sub_mats.append(fmri_mat)
-
-        # print(f'{en_subjs_id[sub]} = {fmri_mat.shape}')
-    all_story_mats.append(all_sub_mats)
-
+all_story_mats = get_fmri_mats(fmri_data_dir, en_subjs_id, fmri_story_names)
 
 # resample fmri data to match mdl data, fmri timescale and nodes in each mdl layer, Lanczos sampling
 resize_mats = []
