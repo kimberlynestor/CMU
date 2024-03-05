@@ -85,6 +85,16 @@ for i in range(len(test_mdl_embeds)):
     # np.save(f'{pred_output_dir}{story_names[-1]}_pred{i+1}.npy', predict_fmri)
 """
 
+# load training data
+train_data_names = sorted(os.listdir(mdl_output_dir))
+train_data_names_coeffs = [i for i in train_data_names if 'coeffs' in i]
+train_data_names_lam = [i for i in train_data_names if 'lambda' in i]
+
+# load fmri predictions
+fmri_pred_names = sorted(os.listdir(pred_output_dir))
+pred = np.load(f'{pred_output_dir}{fmri_pred_names[0]}')
+
+print(len(pred), len(pred[0]))
 
 sys.exit()
 
