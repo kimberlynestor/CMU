@@ -93,7 +93,7 @@ train_data_names_lam = [i for i in train_data_names if 'lambda' in i]
 # fmri predictions names
 fmri_pred_names = sorted(os.listdir(pred_output_dir))
 
-
+"""
 #### make brain plots in pycortex
 ## plot 1 = correlation of encoding prediction and regularization coefficients - for each subj test data (3), for each story coeffs(8*3)
 for i in range(len(fmri_pred_names)):
@@ -107,72 +107,30 @@ for i in range(len(fmri_pred_names)):
         cor = np.corrcoef(fmri_pred, mdl_coeffs)
 
         # plot 2d cortex flat map - in nilearn, save fig
-        plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(np.ravel(cor)), colorbar=True, cmap='magma') # , vmin=-0.7, vmax=0.7
+        plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(np.ravel(cor)), colorbar=True, cmap='magma', vmin=-0.27, vmax=0.7) #
         plt.xlabel('pred and coeff\n (correlation)', fontsize=10)
         plt.title(f'{m_save_name}\npred{i+1}', fontsize=6)
         plt.savefig(f'{output_figs_dir}{m_save_name}_pred{i+1}.png', dpi=500)
         # plt.show()
         plt.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""
 
 ## plot 2 = 1 subj, 1 ft space (story), brain plot of optimal regularization parameter (lambda)
+mdl_lambda = np.load(f'{mdl_output_dir}{train_data_names_lam[0]}')
+l_save_name = train_data_names_lam[0].split('.')[0]
 
+# np.set_printoptions(threshold=sys.maxsize)
 
-sys.exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# lz resize to large n voxels
-fmri_data_dir = curr_dir + dir_depth + '/preprocessed_data/UTS01/adollshouse.hf5' # UTS01, UTS02, UTS03
-fmri_dict = h5py.File(fmri_data_dir, 'r')
-fmri_mat = np.array(fmri_dict['data'])
-vox_sz = fmri_mat.shape[-1]
-
-
-# 2d cortex flat map
-plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(fmri_mat[0]), colorbar=True, cmap='magma')
-plt.xlabel('pred and coeff\n (correlation)')
-plt.show()
-
-# inflated cortex plot
-# plotting.plot_surf(hcp.mesh.inflated)
-# plotting.plot_surf(hcp.mesh.inflated, hcp.cortex_data(fmri_mat[0]), bg_map=hcp.mesh.sulc, colorbar=True, cmap='magma')
+# plot 2d cortex flat map - in nilearn, save fig
+# plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(np.repeat(mdl_lambda, mdl_lambda.shape[0], axis=0)), colorbar=True, cmap='viridis') # , vmin=-0.27, vmax=0.7
+plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(np.array(list(mdl_lambda)*mdl_lambda.shape[0])), colorbar=True, cmap='viridis') # , vmin=-0.27, vmax=0.7
+plt.xlabel('optimal\n lambda', fontsize=10)
+plt.title(f'{l_save_name}', fontsize=7)
+# plt.savefig(f'{output_figs_dir}{l_save_name}.png', dpi=500)
 # plt.show()
+plt.close()
 
 
-
-sys.exit()
 
 
 # plot random flat map in pycortex
