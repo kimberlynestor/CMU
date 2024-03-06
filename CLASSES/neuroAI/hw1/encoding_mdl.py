@@ -85,38 +85,72 @@ for i in range(len(test_mdl_embeds)):
     # np.save(f'{pred_output_dir}{story_names[-1]}_pred{i+1}.npy', predict_fmri)
 """
 
-# load training data
+# training data names
 train_data_names = sorted(os.listdir(mdl_output_dir))
 train_data_names_coeffs = [i for i in train_data_names if 'coeffs' in i]
 train_data_names_lam = [i for i in train_data_names if 'lambda' in i]
 
-mdl_coeffs = np.load(f'{mdl_output_dir}{train_data_names_coeffs[0]}')
-
-print(len(mdl_coeffs), len(mdl_coeffs[0]))
-
-# load fmri predictions
+# fmri predictions names
 fmri_pred_names = sorted(os.listdir(pred_output_dir))
-fmri_pred = np.load(f'{pred_output_dir}{fmri_pred_names[0]}')
-
-print(len(fmri_pred), len(fmri_pred[0]))
 
 
 #### make brain plots in pycortex
-## plot 1 = correlation of encoding prediction and regularization coefficients - for each subj test (3), for each story (8)
-# compute_correlation(Test_Y, Pred)
-cor = np.corrcoef(fmri_pred, mdl_coeffs)
-print(cor, cor.shape)
+## plot 1 = correlation of encoding prediction and regularization coefficients - for each subj test data (3), for each story coeffs(8*3)
+for i in range(len(fmri_pred_names)):
+    # load fmri test predictions
+    fmri_pred = np.load(f'{pred_output_dir}{fmri_pred_names[i]}')
+    for ii in range(len(train_data_names_coeffs)):
+        # load training weights
+        mdl_coeffs = np.load(f'{mdl_output_dir}{train_data_names_coeffs[ii]}')
+        m_save_name = train_data_names_coeffs[ii].split('.')[0]
+        # compute correlation
+        cor = np.corrcoef(fmri_pred, mdl_coeffs)
+
+        # plot 2d cortex flat map - in nilearn, save fig
+        plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(np.ravel(cor)), colorbar=True, cmap='magma') # , vmin=-0.7, vmax=0.7
+        plt.xlabel('pred and coeff\n (correlation)', fontsize=10)
+        plt.title(f'{m_save_name}\npred{i+1}', fontsize=6)
+        plt.savefig(f'{output_figs_dir}{m_save_name}_pred{i+1}.png', dpi=500)
+        # plt.show()
+        plt.close()
 
 
-# 2d cortex flat map
-plotting.plot_surf(hcp.mesh.flat, hcp.cortex_data(np.ravel(cor)), colorbar=True, cmap='magma') # , vmin=-0.7, vmax=0.7
-plt.xlabel('pred and coeff\n (correlation)')
-plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## plot 2 = 1 subj, 1 ft space (story), brain plot of optimal regularization parameter (lambda)
 
 
 sys.exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # lz resize to large n voxels
