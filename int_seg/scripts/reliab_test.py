@@ -17,7 +17,7 @@ from scipy import stats
 
 import matplotlib.pyplot as plt
 import arviz as az
-import pymc3 as pm
+# import pymc3 as pm
 # import seaborn as sns
 
 
@@ -61,8 +61,9 @@ plt.axvline(x=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(7, 11))
 plt.title('Bg \u2192 Cortex', size=12, fontname=font_lst[0], weight='bold')
 plt.xlabel('Reliability', size=12, fontname=font_lst[0])
 plt.ylabel('Kernel Density', size=12, fontname=font_lst[0])
-plt.savefig(f'{par_dir}/output/reliab_kde_cort_bg.png', dpi=1000)
-plt.show()
+# plt.savefig(f'{par_dir}/output/reliab_kde_cort_bg.png', dpi=1000)
+# plt.show()
+plt.close()
 
 # cort x cb
 az.plot_kde(cort_cb_test, rug=True)
@@ -70,8 +71,9 @@ plt.axvline(x=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(7, 11))
 plt.title('Cb \u2192 Cortex', size=12, fontname=font_lst[0], weight='bold')
 plt.xlabel('Reliability', size=12, fontname=font_lst[0])
 plt.ylabel('Kernel Density', size=12, fontname=font_lst[0])
-plt.savefig(f'{par_dir}/output/reliab_kde_cort_cb.png', dpi=1000)
-plt.show()
+# plt.savefig(f'{par_dir}/output/reliab_kde_cort_cb.png', dpi=1000)
+# plt.show()
+plt.close()
 
 # cb x bg
 az.plot_kde(cb_bg_test, rug=True)
@@ -79,8 +81,9 @@ plt.axvline(x=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(7, 11))
 plt.title('Bg \u2192 Cb', size=12, fontname=font_lst[0], weight='bold')
 plt.xlabel('Reliability', size=12, fontname=font_lst[0])
 plt.ylabel('Kernel Density', size=12, fontname=font_lst[0])
-plt.savefig(f'{par_dir}/output/reliab_kde_cb_bg.png', dpi=1000)
-plt.show()
+# plt.savefig(f'{par_dir}/output/reliab_kde_cb_bg.png', dpi=1000)
+# plt.show()
+plt.close()
 
 task = 'stroop'
 cort_bg_diff_stroop
@@ -91,6 +94,22 @@ task = 'msit'
 cort_bg_diff_msit
 cort_cb_diff_msit
 cb_bg_diff_msit
+
+
+
+# print(  bayes_fact(cort_bg_diff_stroop[0], cort_bg_diff_msit[0])  )
+
+# get bayes factor
+cort_bg_bf = np.array(list(map(lambda tup: bayes_fact(tup[0], tup[1]), zip(cort_bg_diff_stroop, cort_bg_diff_msit))))
+cort_cb_bf = np.array(list(map(lambda tup: bayes_fact(tup[0], tup[1]), zip(cort_cb_diff_stroop, cort_cb_diff_msit))))
+cb_bg_bf = np.array(list(map(lambda tup: bayes_fact(tup[0], tup[1]), zip(cb_bg_diff_stroop, cb_bg_diff_msit))))
+
+print(f'cort_bg_diff BIC_stroop, BIC_msit, B_01 = {np.mean(cort_bg_bf, axis=0)}')
+print(f'cort_cb_diff BIC_stroop, BIC_msit, B_01 = {np.mean(cort_cb_bf, axis=0)}')
+print(f'cb_bg_diff BIC_stroop, BIC_msit, B_01 = {np.mean(cb_bg_bf, axis=0)}\n')
+
+sys.exit()
+
 
 
 from pingouin import ttest

@@ -9,8 +9,10 @@ import sys
 import itertools
 
 import numpy as np
+import math
 import pandas as pd
 from scipy import stats
+from scipy.stats import norm
 from statsmodels.tsa.api import VAR
 import impyute as impy
 
@@ -219,6 +221,31 @@ def save_eigen_cen(subj_lst, task, region):
 
     np.save(f'{main_dir}IntermediateData/{task}/eigen_cen_{region}_allsub_{task}.npy', eigen_lst)
     return
+
+
+def bayes_fact(null, alt):
+    """function takes in two datasets and returns BIC values
+    for both datasets and bayes factor value comparing the two.
+    based on: Wagenmakers, 2007 - A practical solution to the pervasive problems of p values"""
+    # calculate bic for stroop
+    data_0 = null
+    m,s = norm.fit(data_0)
+    log_ll = np.log(np.product(norm.pdf(data_0,m,s)))
+    bic_0 = np.log(-2*log_ll) + np.log(len(data_0))
+    bic_0 = round(bic_0, 2)
+
+    # calculate bic for msit
+    data_1 = alt
+    m, s = norm.fit(data_1)
+    log_ll = np.log(np.product(norm.pdf(data_1, m, s)))
+    bic_1 = np.log(-2 * log_ll) + np.log(len(data_1))
+    bic_1 = round(bic_1, 2)
+
+    # calculate bayes factor, 01
+    b_fac = math.exp((bic_1 - bic_0)/2)
+    b_fac = round(b_fac, 2)
+
+    return(bic_0, bic_1, b_fac)
 
 
 """This function gets the listed statistic for all lags run on the statsmodel 
