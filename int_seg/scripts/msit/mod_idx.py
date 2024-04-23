@@ -49,7 +49,7 @@ task = 'msit'
 # save_mod_idx(subj_lst, task=task) # run this line once
 
 # load modularity time series, remove init 5, smooth, z score - cortex
-q_allsub = np.load(f'{main_dir}IntermediateData/{task}/subjs_all_net_cort_q_{task}.npy')
+q_allsub = np.load(f'{main_dir}{inter_path}{task}/subjs_all_net_cort_q_{task}.npy')
 q_allsub_z = np.array(list(map(lambda i: stats.zscore(i[5:]), q_allsub)))
 q_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i[5:], sigma=1), q_allsub))) # sigma=2
 q_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), q_allsub_smooth)))
@@ -64,7 +64,7 @@ q_allsub_smooth_z_allpts = np.array(list(map(lambda i: stats.zscore(i), q_allsub
 q_avg_allpts = np.average(q_allsub, axis=0)
 q_avg_smooth_allpts = gaussian_filter(q_avg_allpts, sigma=1)
 q_avg_smooth_z_allpts = stats.zscore(q_avg_smooth_allpts)
-np.save(f'{main_dir}IntermediateData/{task}/q_avg_smooth_z_allpts_cort_{task}.npy', q_avg_smooth_z_allpts)
+np.save(f'{main_dir}{inter_path}{task}/q_avg_smooth_z_allpts_cort_{task}.npy', q_avg_smooth_z_allpts)
 
 ## average task blocks
 q_allsub_smooth_z_allpts_pad = np.array(list(map(lambda sub:np.pad(sub, (0,10), \
@@ -77,7 +77,7 @@ mod_cort_avg_blocks_allsub = np.array(list(map(lambda sub: np.nanmean(np.array(l
 q_avg = np.average(q_allsub, axis=0)
 q_avg_smooth = np.average(q_allsub_smooth, axis=0)
 q_avg_smooth_z = stats.zscore(q_avg_smooth)
-np.save(f'{main_dir}IntermediateData/{task}/q_avg_smooth_z_cort_{task}.npy', q_avg_smooth_z)
+np.save(f'{main_dir}{inter_path}{task}/q_avg_smooth_z_cort_{task}.npy', q_avg_smooth_z)
 
 
 ###### MODULARITY LINE GRAPH
@@ -115,8 +115,9 @@ for i in range(len(inc_block)):
 plt.ylim(-2.85, 2.5)
 plt.legend(handles=[inc_patch_cb, con_patch_cb], loc=4)
 plt.tight_layout()
-plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_ci_{task}.png', dpi=2000)
-plt.show()
+# plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qall_smooth_sig2_blocks_mask_init_cb_yerr_ci_{task}.png', dpi=2000)
+# plt.show()
+plt.close()
 
 
 ##### SEPARATE INC AND CON BLOCKS - ON TASK
@@ -160,8 +161,9 @@ plt.ylabel('Modularity (z-scored)', size=15, fontname=font_lst[0])
 plt.title(task.upper(), size=28, fontname=font_lst[0], fontweight='bold')
 plt.legend((inc_circ_cb, con_circ_cb), ('Incongruent', 'Congruent'), numpoints=1, loc=1)
 plt.tight_layout()
-plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_ontask_cb_{task}.png', dpi=2000)
-plt.show()
+# plt.savefig(f'{pars[1]}/output/{task}/allsub_cortnet_mod_qavg_smooth_sig1_pointplot_ci_ontask_cb_{task}.png', dpi=2000)
+# plt.show()
+plt.close()
 
 
 ### prepare melt df with subj_id, task, block and mean mod_idx by block
@@ -181,7 +183,7 @@ df_mlm_inc_melt = pd.melt(df_mlm_inc, id_vars=['subj_ID', 'task'], var_name='blo
 
 # concat con and inc melt df
 df_mlm = pd.concat([df_mlm_con_melt, df_mlm_inc_melt], ignore_index=True)
-df_mlm.to_csv(f'{main_dir}IntermediateData/{task}/on_task_block_mu_mod_idx_{task}.csv', index=False)
+df_mlm.to_csv(f'{main_dir}{inter_path}{task}/on_task_block_mu_mod_idx_{task}.csv', index=False)
 
 
 #### HRF PREDICT REGRESSORS
@@ -215,7 +217,7 @@ for i in q_allsub_smooth_z:
     mlr_coeffs = mlr.coef_
     mlr_coeffs_lst.append(mlr_coeffs)
 # print(mlr_coeffs_lst)
-np.save(f'{main_dir}IntermediateData/{task}/mlr_coeffs_subjs_all_net_cort_mod_{task}.npy', mlr_coeffs_lst)
+np.save(f'{main_dir}{inter_path}{task}/mlr_coeffs_subjs_all_net_cort_mod_{task}.npy', mlr_coeffs_lst)
 
 
 ## inc and con beta coeff - mean

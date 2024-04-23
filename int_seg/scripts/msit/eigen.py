@@ -33,8 +33,8 @@ task = 'msit'
 # save_eigen_cen(subj_lst, task=task, region='bg') # run this line once
 
 
-eigen_cen_cb_allsub = np.load(f'{main_dir}IntermediateData/{task}/eigen_cen_cb_allsub_{task}.npy')
-eigen_cen_bg_allsub = np.load(f'{main_dir}IntermediateData/{task}/eigen_cen_bg_allsub_{task}.npy')
+eigen_cen_cb_allsub = np.load(f'{main_dir}{inter_path}{task}/eigen_cen_cb_allsub_{task}.npy')
+eigen_cen_bg_allsub = np.load(f'{main_dir}{inter_path}{task}/eigen_cen_bg_allsub_{task}.npy')
 
 eigen_cen_cb_allsub_smooth = np.array(list(map(lambda i: gaussian_filter(i, sigma=1), eigen_cen_cb_allsub)))
 eigen_cen_cb_allsub_smooth_z = np.array(list(map(lambda i: stats.zscore(i), eigen_cen_cb_allsub_smooth)))
@@ -48,8 +48,8 @@ eigen_cen_bg_avg_smooth = gaussian_filter(eigen_cen_bg_avg, sigma=1)
 
 eigen_cen_cb_avg_smooth_z = stats.zscore(eigen_cen_cb_avg_smooth)
 eigen_cen_bg_avg_smooth_z = stats.zscore(eigen_cen_bg_avg_smooth)
-np.save(f'{main_dir}IntermediateData/{task}/eigen_cen_cb_avg_smooth_z_{task}.npy', eigen_cen_cb_avg_smooth_z)
-np.save(f'{main_dir}IntermediateData/{task}/eigen_cen_bg_avg_smooth_z_{task}.npy', eigen_cen_bg_avg_smooth_z)
+np.save(f'{main_dir}{inter_path}{task}/eigen_cen_cb_avg_smooth_z_{task}.npy', eigen_cen_cb_avg_smooth_z)
+np.save(f'{main_dir}{inter_path}{task}/eigen_cen_bg_avg_smooth_z_{task}.npy', eigen_cen_bg_avg_smooth_z)
 
 
 print(f'\nEigenvector centrality corr_coef, BG and CB: ', \
