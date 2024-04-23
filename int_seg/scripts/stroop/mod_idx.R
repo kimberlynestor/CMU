@@ -8,7 +8,7 @@ library(lmerTest)
 library(lme4)
 library(broom)
 
-filepath = '/home/kimberlynestor/gitrepo/int_seg/data/IntermediateData/stroop'
+filepath = '/home/kimberlynestor/gitrepo/int_seg/data/inter/stroop'
 output = '/home/kimberlynestor/gitrepo/int_seg/output/stroop'
 
 ## ON TASK
