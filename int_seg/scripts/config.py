@@ -23,9 +23,10 @@ import sys
 
 # data path and subjects
 main_dir = '/home/kimberlynestor/gitrepo/int_seg/data/'
-d_path = 'AnalysisData/pip_edge_ts/shen/'
+d_path = 'edge/pip_edge_ts/shen/'
 dep_path = 'depend/'
 at_path = 'atlas/'
+inter_path = 'inter/'
 
 # params
 rt = 2

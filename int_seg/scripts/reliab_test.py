@@ -28,16 +28,16 @@ par_dir = pars[0]
 sys.path.insert(0, str(par_dir))
 
 
-# lagged vector comparison
+# lagged vector comparison - differences
 task = 'stroop'
-cort_bg_diff_stroop = np.load(f'{main_dir}IntermediateData/{task}/cross_corr_cort_bg_peak_diff_{task}.npy')
-cort_cb_diff_stroop = np.load(f'{main_dir}IntermediateData/{task}/cross_corr_cort_cb_peak_diff_{task}.npy')
-cb_bg_diff_stroop = np.load(f'{main_dir}IntermediateData/{task}/cross_corr_cb_bg_peak_diff_{task}.npy')
+cort_bg_diff_stroop = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cort_bg_peak_diff_{task}.npy')
+cort_cb_diff_stroop = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cort_cb_peak_diff_{task}.npy')
+cb_bg_diff_stroop = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cb_bg_peak_diff_{task}.npy')
 
 task = 'msit'
-cort_bg_diff_msit = np.load(f'{main_dir}IntermediateData/{task}/cross_corr_cort_bg_peak_diff_{task}.npy')
-cort_cb_diff_msit = np.load(f'{main_dir}IntermediateData/{task}/cross_corr_cort_cb_peak_diff_{task}.npy')
-cb_bg_diff_msit = np.load(f'{main_dir}IntermediateData/{task}/cross_corr_cb_bg_peak_diff_{task}.npy')
+cort_bg_diff_msit = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cort_bg_peak_diff_{task}.npy')
+cort_cb_diff_msit = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cort_cb_peak_diff_{task}.npy')
+cb_bg_diff_msit = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cb_bg_peak_diff_{task}.npy')
 
 # reliability test on diff vec
 cort_bg_test = np.array(list(map(lambda tup: stats.spearmanr(tup[0], tup[1])[0], zip(cort_bg_diff_stroop, cort_bg_diff_msit))))
@@ -192,14 +192,14 @@ plt.show()
 #######
 # vector to vector comparison
 task = 'stroop'
-q_allsub_stroop = np.load(f'{main_dir}IntermediateData/{task}/subjs_all_net_cort_q_{task}.npy')
-eigen_cb_allsub_stroop = np.load(f'{main_dir}IntermediateData/{task}/eigen_cen_cb_allsub_{task}.npy')
-eigen_bg_allsub_stroop = np.load(f'{main_dir}IntermediateData/{task}/eigen_cen_bg_allsub_{task}.npy')
+q_allsub_stroop = np.load(f'{main_dir}{inter_path}{task}/subjs_all_net_cort_q_{task}.npy')
+eigen_cb_allsub_stroop = np.load(f'{main_dir}{inter_path}{task}/eigen_cen_cb_allsub_{task}.npy')
+eigen_bg_allsub_stroop = np.load(f'{main_dir}{inter_path}{task}/eigen_cen_bg_allsub_{task}.npy')
 
 task = 'msit'
-q_allsub_msit = np.load(f'{main_dir}IntermediateData/{task}/subjs_all_net_cort_q_{task}.npy')
-eigen_cb_allsub_msit = np.load(f'{main_dir}IntermediateData/{task}/eigen_cen_cb_allsub_{task}.npy')
-eigen_bg_allsub_msit = np.load(f'{main_dir}IntermediateData/{task}/eigen_cen_bg_allsub_{task}.npy')
+q_allsub_msit = np.load(f'{main_dir}{inter_path}{task}/subjs_all_net_cort_q_{task}.npy')
+eigen_cb_allsub_msit = np.load(f'{main_dir}{inter_path}{task}/eigen_cen_cb_allsub_{task}.npy')
+eigen_bg_allsub_msit = np.load(f'{main_dir}{inter_path}{task}/eigen_cen_bg_allsub_{task}.npy')
 
 
 cort_test = np.array(list(map(lambda tup: stats.spearmanr(tup[0], tup[1]).statistic, zip(q_allsub_stroop, q_allsub_msit))))
@@ -237,10 +237,10 @@ plt.show()
 
 # mlr coeffs test
 task = 'stroop'
-q_mlr_allsub_stroop = np.load(f'{main_dir}IntermediateData/{task}/mlr_coeffs_subjs_all_net_cort_mod_{task}.npy')
+q_mlr_allsub_stroop = np.load(f'{main_dir}{inter_path}{task}/mlr_coeffs_subjs_all_net_cort_mod_{task}.npy')
 
 task = 'msit'
-q_mlr_allsub_msit = np.load(f'{main_dir}IntermediateData/{task}/mlr_coeffs_subjs_all_net_cort_mod_{task}.npy')
+q_mlr_allsub_msit = np.load(f'{main_dir}{inter_path}{task}/mlr_coeffs_subjs_all_net_cort_mod_{task}.npy')
 
 
 cort_mlr_test = list(map(lambda tup: stats.spearmanr(tup[0], tup[1]).statistic, zip(q_mlr_allsub_stroop, q_mlr_allsub_msit)))

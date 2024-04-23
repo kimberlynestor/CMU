@@ -85,7 +85,7 @@ def save_mod_idx(subj_lst, task):
         ci_all_frs = np.array(list(map(lambda x: x[0], mod_all_frs)))
         q_all_frs = np.array(list(map(lambda x: x[1], mod_all_frs)))
         q_subj_lst.append(q_all_frs)
-    np.save(f'{main_dir}IntermediateData/{task}/{out_name}{task}.npy', q_subj_lst)
+    np.save(f'{main_dir}{inter_path}{task}/{out_name}{task}.npy', q_subj_lst)
     return
 
 
@@ -134,6 +134,7 @@ def cross_corr_vec(x,y, lags=16, pval=False):
             lag_corr.append(corr)
             lag_pval.append(ttest)
     if pval == False:
+        # print(lag_pval)
         return(lag_corr, lags)
     else:
         return(lag_pval)
@@ -219,7 +220,7 @@ def save_eigen_cen(subj_lst, task, region):
         avg_tr = np.average(eigen, axis=1)
         eigen_lst.append(avg_tr)
 
-    np.save(f'{main_dir}IntermediateData/{task}/eigen_cen_{region}_allsub_{task}.npy', eigen_lst)
+    np.save(f'{main_dir}{inter_path}{task}/eigen_cen_{region}_allsub_{task}.npy', eigen_lst)
     return
 
 

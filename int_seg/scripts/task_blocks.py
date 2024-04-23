@@ -61,10 +61,6 @@ inc_frames = [list(range(int(i[0]), int(i[1])+1)) for i in inc_block_frames]
 con_frames = [list(range(int(i[0]), int(i[1])+1)) for i in con_block_frames]
 fix_frames = [list(range(int(i[0]), int(i[1])+1)) for i in fix_block_frames]
 
-# print(fix_block_frames)
-# print(inc_block_frames)
-# print(group_blocks)
-# print()
 
 #### HRF PREDICT
 # timepoints of image capture
