@@ -27,6 +27,8 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import r2_score
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -111,17 +113,73 @@ mdl_pair_r2_dict = {}
 for i in range(len(pred_fmri_rep_mdls)):
     mdl_pair_r2 = r2_score(rz_masked_fmri_data_test, pred_fmri_rep_mdls[i])
     mdl_pair_r2_dict[f'{mdl_pairs[i][0]}_{mdl_pairs[i][1]}'] = mdl_pair_r2
-
 print(mdl_pair_r2_dict)
 
 mdl_pair_r2_dict_file = open(f'{asym_output_path}pair_mdl_r2_score.json', 'w')
 json.dump(mdl_pair_r2_dict, mdl_pair_r2_dict_file)
 
 
-
-#### 2.5 Relative unique R^2 - from combined encoding mdls
-
+#### 2.5 Relative unique and shared R^2 - from combined encoding mdls
+# load sing mdl r^2
 mdl_r2_dict_file = open(f'{asym_output_path}sing_mdl_r2_score.json', 'r')
 sing_mdl_r2_dict = json.load(mdl_r2_dict_file)
+print(sing_mdl_r2_dict, '\n')
 
-print(sing_mdl_r2_dict)
+
+# R^2 unique performance -- mdl1: R2_unique(F1) = R2(F_1+2) − R2(F2) -- mdl2: R2_unique(F2) = R2(F_1+2) − R2(F1)
+# R^2 shared performance -- R2 = R2(F1) + R2(F2) − R2(F1+2)
+# model transfer in brain -- F1 → F2 = R2_shared /R2(F2)
+
+mdl_pair_r2_uniq_dict = {}
+mdl_pair_r2_shared_dict = {}
+mdl_pair_r2_transfer_dict = {}
+for mdl_tup in mdl_pairs[:3]:
+    # calculate unique performance
+    mdl1_r2_uniq = mdl_pair_r2_dict[f'{mdl_tup[0]}_{mdl_tup[1]}'] - sing_mdl_r2_dict[mdl_tup[1]]
+    mdl2_r2_uniq = mdl_pair_r2_dict[f'{mdl_tup[0]}_{mdl_tup[1]}'] - sing_mdl_r2_dict[mdl_tup[0]]
+    mdl_pair_r2_uniq_dict[f'{mdl_tup[0]}_{mdl_tup[1]}'] = [mdl1_r2_uniq, mdl2_r2_uniq]
+
+    # calculate shared performance
+    r2_shared = sing_mdl_r2_dict[mdl_tup[0]] + sing_mdl_r2_dict[mdl_tup[1]] - mdl_pair_r2_dict[f'{mdl_tup[0]}_{mdl_tup[1]}']
+    mdl_pair_r2_shared_dict[f'{mdl_tup[0]}_{mdl_tup[1]}'] = r2_shared
+
+    # model transfer in brain - asym measure, shows how one mdl performance is captured in another model
+    mdl_transfer = r2_shared/sing_mdl_r2_dict[mdl_tup[1]]
+    mdl_pair_r2_transfer_dict[f'{mdl_tup[0]}_{mdl_tup[1]}'] = mdl_transfer
+
+print(mdl_pair_r2_uniq_dict)
+print(mdl_pair_r2_shared_dict)
+print(mdl_pair_r2_transfer_dict)
+
+# save brain score dicts
+mdl_pair_r2_uniq_file = open(f'{asym_output_path}pair_mdl_r2_uniq_score.json', 'w')
+json.dump(mdl_pair_r2_uniq_dict, mdl_pair_r2_uniq_file)
+
+mdl_pair_r2_shared_file = open(f'{asym_output_path}pair_mdl_r2_shared_score.json', 'w')
+json.dump(mdl_pair_r2_shared_dict, mdl_pair_r2_shared_file)
+
+mdl_pair_r2_transfer_file = open(f'{asym_output_path}pair_mdl_r2_transfer_score.json', 'w')
+json.dump(mdl_pair_r2_transfer_dict, mdl_pair_r2_transfer_file)
+
+
+# plot brains scores
+mdl1_r2_uniq = np.array(list(mdl_pair_r2_uniq_dict.values())).T[0]
+mdl2_r2_uniq = np.array(list(mdl_pair_r2_uniq_dict.values())).T[1]
+mdl_r2_shared = np.array(list(mdl_pair_r2_shared_dict.values()))
+mdl_r2_transfer = np.array(list(mdl_pair_r2_transfer_dict.values()))
+
+width = 0.25
+
+plt.bar(np.arange(3), mdl1_r2_uniq, width)
+plt.bar(np.arange(3)+width, mdl2_r2_uniq, width)
+plt.bar(np.arange(3)+width*2, mdl_r2_shared, width)
+plt.bar(np.arange(3)+width*3, mdl_r2_transfer, width)
+plt.subplots_adjust(bottom=0.35)
+plt.ylabel('Brain scores')
+plt.xticks(np.linspace(0,3, num=13), ['autoencoding_uniq','depth_euclidean_uniq', 'autoencoding_depth_euclidean_shared', 'autoencoding -> depth_euclidean transfer', \
+                                      'autoencoding_uniq', 'jigsaw_uniq', 'autoencoding_jigsaw_shared', 'autoencoding -> jigsaw transfer', \
+                                      'autoencoding_reshading', 'reshading_uniq', 'autoencoding_reshading_shared', 'autoencoding -> reshading transfer', ''], rotation=80, fontsize=5)
+plt.title('Paired taskonomy models R^2 unique, shared and transfer scores', fontweight='bold', fontsize=12)
+plt.savefig(f'{asym_output_path}pair_mdl_r2_scores_barplot.png', dpi=500)
+plt.show()
+
