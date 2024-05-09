@@ -169,13 +169,13 @@ for i in tqdm(range(len(mdl_names))):
         rep_mdl_stim_org = np.array([torch.load(task_mdls_path + mdl_names[i] + '/' + img + '.pt').detach().numpy() for img in full_sess_img_ord_train[ii]])
         if not os.path.isdir(task_mdls_stim_org_path + mdl_names[i]):
             os.makedirs(task_mdls_stim_org_path + mdl_names[i])
-        np.save(f'{task_mdls_stim_org_path}{mdl_names[i]}_stim_org_{sess_names[ii][-10:-4]}.npy', rep_mdl_stim_org)
+        np.save(f'{task_mdls_stim_org_path}{mdl_names[i]}/{mdl_names[i]}_stim_org_{sess_names[ii][-10:-4]}.npy', rep_mdl_stim_org)
 
         # resize mdl shape to match fmri data, save
         rz_rep_mdl_stim_org = cv2.resize(rep_mdl_stim_org, rz_shape[::-1], interpolation=cv2.INTER_LANCZOS4)  # row, col reversed
         if not os.path.isdir(rz_task_mdls_stim_org_path + mdl_names[i]):
             os.makedirs(rz_task_mdls_stim_org_path + mdl_names[i])
-        np.save(f'{rz_task_mdls_stim_org_path}{mdl_names[i]}_rz_stim_org_{sess_names[ii][-10:-4]}.npy', rz_rep_mdl_stim_org)
+        np.save(f'{rz_task_mdls_stim_org_path}{mdl_names[i]}/{mdl_names[i]}_rz_stim_org_{sess_names[ii][-10:-4]}.npy', rz_rep_mdl_stim_org)
 
         # train encoding mdl
         CV_ridge = SimpleCVRidgeDiffLambda(solver = 'sag', n_splits=10) # init solver = 'auto'
@@ -183,10 +183,10 @@ for i in tqdm(range(len(mdl_names))):
 
     # predict on sess 15 as test, resize mdl
     rep_mdl_stim_org_test = np.array([torch.load(task_mdls_path + mdl_names[i] + '/' + img + '.pt').detach().numpy() for img in full_sess_img_ord_test])
-    np.save(f'{task_mdls_stim_org_path}{mdl_names[i]}_stim_org_ses-15.npy', rep_mdl_stim_org_test)
+    np.save(f'{task_mdls_stim_org_path}{mdl_names[i]}/{mdl_names[i]}_stim_org_ses-15.npy', rep_mdl_stim_org_test)
 
     rz_rep_mdl_stim_org_test = cv2.resize(rep_mdl_stim_org_test, rz_shape[::-1], interpolation=cv2.INTER_LANCZOS4)  # row, col reversed
-    np.save(f'{rz_task_mdls_stim_org_path}{mdl_names[i]}_rz_stim_org_ses-15.npy', rz_rep_mdl_stim_org_test)
+    np.save(f'{rz_task_mdls_stim_org_path}{mdl_names[i]}/{mdl_names[i]}_rz_stim_org_ses-15.npy', rz_rep_mdl_stim_org_test)
 
     predict_fmri = CV_ridge.predict(rz_rep_mdl_stim_org_test)
     np.save(f'{pred_output_dir}{mdl_names[i]}_pred_fmri.npy', predict_fmri)
