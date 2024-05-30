@@ -14,7 +14,7 @@ from config import *
 
 import numpy as np
 from scipy import stats
-from pingouin import ttest
+from pingouin import bayesfactor_pearson
 from statsmodels.stats.multitest import fdrcorrection
 
 # set shared scripts dir up one level
@@ -35,6 +35,7 @@ corr_cort_bg_msit = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cort_bg_{t
 corr_cort_cb_msit = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cort_cb_{task}.npy')
 corr_cb_bg_msit = np.load(f'{main_dir}{inter_path}{task}/cross_corr_cb_bg_{task}.npy')
 
+n_sub = corr_cort_bg_stroop.shape[0]
 
 ## significance test of each lag --- mean=0 cause correlations
 
@@ -81,4 +82,42 @@ print(cb_bg_msit_sigs_idx)
 ## bayes factor test for reliability
 
 
-# stats.pearsonr()
+
+print('\n')
+
+
+# get set intersection of significant lags
+cort_bg_idxs = list(set(cort_bg_stroop_sigs_idx).intersection(set(cort_bg_msit_sigs_idx)))
+cort_cb_idxs = list(set(cort_cb_stroop_sigs_idx).intersection(set(cort_cb_msit_sigs_idx)))
+cb_bg_idxs = sorted(list(set(cb_bg_stroop_sigs_idx).intersection(set(cb_bg_msit_sigs_idx))))
+
+
+# limit data by overlapping sig lags
+corr_cort_bg_stroop_sig_lags = corr_cort_bg_stroop.T[cort_bg_idxs, :]
+corr_cort_bg_msit_sig_lags = corr_cort_bg_msit.T[cort_bg_idxs, :]
+
+corr_cort_cb_stroop_sig_lags = corr_cort_cb_stroop.T[cort_cb_idxs, :]
+corr_cort_cb_msit_sig_lags = corr_cort_cb_msit.T[cort_cb_idxs, :]
+
+corr_cb_bg_stroop_sig_lags = corr_cb_bg_stroop.T[cb_bg_idxs, :]
+corr_cb_bg_msit_sig_lags = corr_cb_bg_msit.T[cb_bg_idxs, :]
+
+# calculate bayes factor value
+cort_bg_bf = list(map(lambda i:bayesfactor_pearson(stats.pearsonr(i[0], i[1])[0], n_sub, alternative='greater'), \
+                      zip(corr_cort_bg_stroop_sig_lags, corr_cort_bg_msit_sig_lags)))
+cort_cb_bf = list(map(lambda i:bayesfactor_pearson(stats.pearsonr(i[0], i[1])[0], n_sub, alternative='greater'), \
+                      zip(corr_cort_cb_stroop_sig_lags, corr_cort_cb_msit_sig_lags)))
+cb_bg_bf = list(map(lambda i:bayesfactor_pearson(stats.pearsonr(i[0], i[1])[0], n_sub, alternative='greater'), \
+                      zip(corr_cb_bg_stroop_sig_lags, corr_cb_bg_msit_sig_lags)))
+
+
+
+print(f'cort_bg_idxs = {cort_bg_idxs}')
+print(f'cort_bg_bf = {cort_bg_bf}\n')
+
+print(f'cort_cb_idxs = {cort_cb_idxs}')
+print(f'cort_cb_bf = {cort_cb_bf}\n')
+
+print(f'cb_bg_idxs = {cb_bg_idxs}')
+print(f'cb_bg_bf = {cb_bg_bf}\n')
+
