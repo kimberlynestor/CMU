@@ -218,7 +218,7 @@ fig.suptitle(task.upper(), size=28, fontname=font_lst[0], fontweight='bold', x=0
 
 # mod x bg
 ax[0].axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(11, 21))
-ax[0].plot(lags*rt, cross_corr_modxbg_avg, lw=1.7, c=p_dict['var_corr_cort_bg'])
+ax[0].plot(lags*rt, cross_corr_modxbg_avg, lw=1.7, c=p_dict['var_corr_cort_bg'], marker='s', markevery=[9, 10, 11, 12, 13, 17, 18])
 ax[0].fill_between(lags*rt, cross_corr_modxbg_avg-cross_corr_modxbg_ci, \
     cross_corr_modxbg_avg+cross_corr_modxbg_ci, lw=0, color=p_dict['var_corr_cort_bg'], alpha=0.3) # alpha=0.3
 ax[0].set_title('Bg \u2192 Cortex', size=16, fontname=font_lst[0], weight='bold')
@@ -227,7 +227,7 @@ ax[0].set_yticks(np.arange(-0.1, 0.15, 0.1))
 
 # mod x cb
 ax[1].axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(11, 21))
-ax[1].plot(lags*rt, cross_corr_modxcb_avg, lw=1.7, c=p_dict['var_corr_cort_cb'])
+ax[1].plot(lags*rt, cross_corr_modxcb_avg, lw=1.7, c=p_dict['var_corr_cort_cb'], marker='s', markevery=[13, 14, 15, 16, 17, 20, 21, 22, 23])
 ax[1].fill_between(lags*rt, cross_corr_modxcb_avg-cross_corr_modxcb_ci, \
     cross_corr_modxcb_avg+cross_corr_modxcb_ci, lw=0, color=p_dict['var_corr_cort_cb'], alpha=0.3) # alpha=0.3
 ax[1].set_title('Cb \u2192 Cortex', size=16, fontname=font_lst[0], weight='bold')
@@ -236,7 +236,7 @@ ax[1].set_yticks(np.arange(-0.1, 0.2, 0.1))
 
 # cb x bg
 ax[2].axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(11, 21))
-ax[2].plot(lags*rt, cross_corr_cbxbg_avg, lw=1.7, c=p_dict['var_corr_cb_bg'])
+ax[2].plot(lags*rt, cross_corr_cbxbg_avg, lw=1.7, c=p_dict['var_corr_cb_bg'], marker='s', markevery=[13, 14, 15, 16, 25, 26])
 ax[2].fill_between(lags*rt, cross_corr_cbxbg_avg-cross_corr_cbxbg_ci, \
     cross_corr_cbxbg_avg+cross_corr_cbxbg_ci, lw=0, color=p_dict['var_corr_cb_bg'], alpha=0.3) # alpha=0.3
 ax[2].set_title('Bg \u2192 Cb', size=16, fontname=font_lst[0], weight='bold')
@@ -253,8 +253,8 @@ fig.supylabel('Correlation', size=16, fontname=font_lst[0])
 plt.tight_layout()
 plt.savefig(f'{pars[1]}/output/{task}/cross_corr_eigenvec_cen_bg_cb_mod_cort_subplots_{task}.png', dpi=2000)
 # plt.savefig(f'{pars[1]}/output/{task}/cross_corr_eigenvec_cen_bg_cb_mod_cort_subplots_{task}_3.png', dpi=2000)
-# plt.show()
-plt.close()
+plt.show()
+# plt.close()
 
 
 

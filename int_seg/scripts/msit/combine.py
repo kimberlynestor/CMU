@@ -215,7 +215,7 @@ cross_corr_cbxbg_avg_pval = cross_corr_vec(np.mean(eigen_cb_allsub_avg_blocks_sm
                                             np.mean(eigen_bg_allsub_avg_blocks_smooth_z, axis=0), lags=15, pval=True)
 
 
-"""
+
 # get pvals for each vector
 cross_corr_modxcb = np.array(list(map(lambda sub: cross_corr_vec(sub[0], sub[1], lags=15, pval=True), \
                         zip(q_allsub_avg_blocks_smooth_z, eigen_cb_allsub_avg_blocks_smooth_z))))
@@ -237,7 +237,7 @@ cross_corr_cbxbg_std = np.array(list(map(lambda i: np.std(i), cross_corr_cbxbg.T
 cross_corr_cbxbg_sem = np.array(list(map(lambda i: st.sem(i), cross_corr_cbxbg.T)))
 cross_corr_cbxbg_ci = cross_corr_cbxbg_sem*ci
 cross_corr_cbxbg_avg = np.mean(cross_corr_cbxbg, axis=0)
-"""
+
 
 
 ## plot correlations in subplots
@@ -246,7 +246,7 @@ fig.suptitle(task.upper(), size=28, fontname=font_lst[0], fontweight='bold', x=0
 
 # mod x bg
 ax[0].axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(11, 21))
-ax[0].plot(lags*rt, cross_corr_modxbg_avg, lw=1.7, c=p_dict['var_corr_cort_bg'])
+ax[0].plot(lags*rt, cross_corr_modxbg_avg, lw=1.7, c=p_dict['var_corr_cort_bg'], marker='s', markevery=[8, 9, 10, 11, 12])
 ax[0].fill_between(lags*rt, cross_corr_modxbg_avg-cross_corr_modxbg_ci, \
     cross_corr_modxbg_avg+cross_corr_modxbg_ci, lw=0, color=p_dict['var_corr_cort_bg'], alpha=0.3)
 ax[0].set_title('Bg \u2192 Cortex', size=16, fontname=font_lst[0], weight='bold')
@@ -255,7 +255,7 @@ ax[0].set_yticks(np.arange(-0.1, 0.15, 0.1))
 
 # mod x cb
 ax[1].axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(11, 21))
-ax[1].plot(lags*rt, cross_corr_modxcb_avg, lw=1.7, c=p_dict['var_corr_cort_cb'])
+ax[1].plot(lags*rt, cross_corr_modxcb_avg, lw=1.7, c=p_dict['var_corr_cort_cb'], marker='s', markevery=[12, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 30])
 ax[1].fill_between(lags*rt, cross_corr_modxcb_avg-cross_corr_modxcb_ci, \
     cross_corr_modxcb_avg+cross_corr_modxcb_ci, lw=0, color=p_dict['var_corr_cort_cb'], alpha=0.3)
 ax[1].set_title('Cb \u2192 Cortex', size=16, fontname=font_lst[0], weight='bold')
@@ -264,24 +264,24 @@ ax[1].set_yticks(np.arange(-0.1, 0.2, 0.1))
 
 # cb x bg
 ax[2].axhline(y=0, c='k', lw=1.2, alpha=0.28, ls='--', dashes=(11, 21))
-ax[2].plot(lags*rt, cross_corr_cbxbg_avg, lw=1.7, c=p_dict['var_corr_cb_bg'])
+ax[2].plot(lags*rt, cross_corr_cbxbg_avg, lw=1.7, c=p_dict['var_corr_cb_bg'], marker='s', markevery=[1, 2, 3, 13, 14, 15, 16, 17])
 ax[2].fill_between(lags*rt, cross_corr_cbxbg_avg-cross_corr_cbxbg_ci, \
     cross_corr_cbxbg_avg+cross_corr_cbxbg_ci, lw=0, color=p_dict['var_corr_cb_bg'], alpha=0.3)
 ax[2].set_title('Bg \u2192 Cb', size=16, fontname=font_lst[0], weight='bold')
 ax[2].set_ylim(-0.15, 0.1)
 ax[2].set_yticks(np.arange(-0.15, 0.1, 0.1))
 
-ax[0].text(-40.69, 0.13, 'D', size=40, fontname=font_lst[0])
-ax[1].text(-40.69, 0.25, 'E', size=40, fontname=font_lst[0])
-ax[2].text(-40.69, 0.1, 'F', size=40, fontname=font_lst[0])
+ax[0].text(-40.69, 0.13, 'A', size=40, fontname=font_lst[0])
+ax[1].text(-40.69, 0.25, 'B', size=40, fontname=font_lst[0])
+ax[2].text(-40.69, 0.1, 'C', size=40, fontname=font_lst[0])
 
 plt.xlabel('Lags', size=16, fontname=font_lst[0])
 fig.supylabel('Correlation', size=16, fontname=font_lst[0])
 # ax[0].legend(handles=[var_corr_cort_cb, var_corr_cort_bg, var_corr_cb_bg], prop={'size':9.2}, bbox_to_anchor=(1.009, 1.03), loc=1) #
 plt.tight_layout()
 # plt.savefig(f'{pars[1]}/output/{task}/cross_corr_eigenvec_cen_bg_cb_mod_cort_subplots_{task}.png', dpi=2000)
-# plt.show()
-plt.close()
+plt.show()
+# plt.close()
 
 
 #### Reliability test prep
@@ -301,7 +301,6 @@ cb_bg_diff_lag0 = np.array(list(map(lambda tup: tup[1] - tup[0], \
 np.save(f'{main_dir}{inter_path}{task}/cross_corr_cb_bg_peak_diff_{task}.npy', cb_bg_diff_lag0)
 
 
-sys.exit()
 
 #### GRANGER CAUSALITY - transfer entropy
 # bottom up, subcortical to cortical -- difference correction - for stationarity
