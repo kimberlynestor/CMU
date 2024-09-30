@@ -136,7 +136,7 @@ def evaluate_policy_async_ordered(env, value_func, gamma, policy, max_iters=int(
         steps += 1
     # END STUDENT SOLUTION
 
-    return (val_func_cp, steps)
+    return(val_func_cp, steps)
 
 
 # Q1.4 - policy iteration
@@ -193,7 +193,7 @@ def evaluate_policy_async_randperm(env, value_func, gamma, policy, max_iters=int
         steps += 1
     # END STUDENT SOLUTION
 
-    return (val_func_cp, steps)
+    return(val_func_cp, steps)
 
 
 # Q1.2 - policy iteration
@@ -542,7 +542,7 @@ def value_iteration_async_randperm(env, gamma, max_iters=int(1e3), tol=1e-3):
             delta = max(delta, abs(val - value_func[state]))
     # END STUDENT SOLUTION
 
-    return (policy, value_func, steps)
+    return(policy, value_func, steps)
 
 
 # Q1.5 - value iteration
@@ -569,9 +569,55 @@ def value_iteration_async_custom(env, gamma, max_iters=int(1e3), tol=1e-3):
         converge.
     '''
     value_func = np.zeros(env.observation_space.n)
+
     # BEGIN STUDENT SOLUTION
+    map_shape = env.desc.shape # env.desc = env map with state ids
+
+    # manhattan distance in shape of map
+    map_dist = np.reshape(np.zeros(env.observation_space.n), map_shape)
+
+    end_row = np.where(env.desc == b'G')[0][0]
+    end_col = np.where(env.desc == b'G')[1][0]
+
+    # loop to get manhattan distances to end location
+    for i in range(end_row):
+        for ii in range(end_col):
+            map_dist[i, ii] = abs(i - end_row) + abs(ii - end_col)
+
+    # order the states according to dist
+    map_dist_flat = map_dist.ravel()
+    states = range(env.observation_space.n)
+    dist_states = [i[0] for i in sorted(list(zip(states, map_dist_flat)), key=lambda i:i[1])]
+
+    policy = np.zeros(env.env.observation_space.n)
+    delta = 1
+    steps = 0
+    # loop for val iteration alg
+    while delta >= tol and steps < max_iters:
+        delta = 0
+        steps += 1
+        # get states for map
+        for state in dist_states:
+            val = value_func[state]
+            max_val = 0
+            max_ac = -1
+            # get action value
+            for action in env.P[state]:
+                action_reward = 0
+                for n_mat in env.P[state][action]:
+                    prob, nstate, reward, _ = n_mat
+                    action_reward += prob * (reward + gamma * value_func[nstate])
+                max_val = max(max_val, action_reward)
+                if max_val == action_reward:
+                    max_ac = action
+            value_func[state] = max_val
+            policy[state] = max_ac
+            delta = max(delta, abs(val - value_func[state]))
     # END STUDENT SOLUTION
-    return(value_func, i)
+
+
+    # END STUDENT SOLUTION
+    return(policy, value_func, steps)
 
 
 
@@ -721,6 +767,12 @@ if __name__ == '__main__':
 
         print(f'\nAsync value iteration - randperm {map_name}')
         print(f'Epochs = {steps}\n')
+
+        # Q1.5 async value iteration - custom, Manhattan dist
+        policy, val_func, steps = value_iteration_async_custom(env, gamma)
+        print(f'\nAsync value iteration - custom, Manhattan dist {map_name}')
+        print(f'Epochs = {steps}\n')
+
 
         # END STUDENT SOLUTION
 
